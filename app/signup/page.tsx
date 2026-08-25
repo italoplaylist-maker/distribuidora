@@ -3,6 +3,12 @@ import { prisma } from "@/lib/database/prisma";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { SignupForm } from "@/features/auth/signup-form";
 
+// Must stay dynamic: this reads Plan rows the Super Admin can add/edit at
+// any time. Without this, Next prerenders the page at build time and bakes
+// in whatever plans existed then (and the build would require a reachable,
+// already-migrated DATABASE_URL).
+export const dynamic = "force-dynamic";
+
 export default async function SignupPage() {
   const plans = await prisma.plan.findMany({
     where: { active: true },

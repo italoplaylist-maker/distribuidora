@@ -85,6 +85,26 @@ prisma/                schema, migrations e seed de demonstração
 tests/                    testes de permissões e isolamento multi-tenant
 ```
 
+## Deploy com Docker
+
+O `Dockerfile` (multi-stage: build com devDependencies + runtime enxuto) espera três variáveis de build/runtime:
+
+```bash
+docker build \
+  --build-arg DATABASE_URL="postgresql://..." \
+  --build-arg NEXTAUTH_SECRET="..." \
+  --build-arg NEXTAUTH_URL="https://seu-dominio.com" \
+  -t distribuidora .
+
+docker run -p 3000:3000 \
+  -e DATABASE_URL="postgresql://..." \
+  -e NEXTAUTH_SECRET="..." \
+  -e NEXTAUTH_URL="https://seu-dominio.com" \
+  distribuidora
+```
+
+No boot do container, `npx prisma migrate deploy` roda automaticamente antes do `next start` — seguro de repetir a cada deploy, pois é um no-op quando o schema já está em dia. Nenhuma página consulta o banco durante o build (todas as rotas que leem dados são `export const dynamic = "force-dynamic"` ou já dinâmicas por padrão), então o `DATABASE_URL` de build não precisa apontar para um banco já migrado/alcançável — ele só é usado caso algum código toque o Prisma durante o build.
+
 ## Preparado para o futuro
 
 - **Pagamentos**: `lib/payments/provider.ts` define uma interface `PaymentProvider` (hoje com um provider manual/demo); plugar Stripe, Mercado Pago ou Asaas é implementar essa interface, sem tocar no restante da aplicação.
