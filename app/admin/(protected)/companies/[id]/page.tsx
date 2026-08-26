@@ -1,13 +1,17 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Pencil } from "lucide-react";
 import { getCompanyAdminDetail } from "@/features/admin/queries";
 import { NotFoundError } from "@/lib/tenant/tenant-context";
 import { prisma } from "@/lib/database/prisma";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
 import { companyStatus, userStatus } from "@/lib/status";
 import { formatDate } from "@/lib/utils";
 import { CompanyStatusActions } from "@/features/admin/company-status-actions";
 import { CompanyPlanForm, CompanyTrialForm } from "@/features/admin/company-plan-trial-form";
+import { ImpersonateButton } from "@/features/admin/impersonate-button";
 
 export default async function AdminCompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,6 +37,15 @@ export default async function AdminCompanyDetailPage({ params }: { params: Promi
           </p>
         </div>
         <StatusBadge {...status} />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <ImpersonateButton companyId={company.id} />
+        <Button variant="outline" asChild>
+          <Link href={`/admin/companies/${company.id}/edit`}>
+            <Pencil className="size-4" /> Editar
+          </Link>
+        </Button>
       </div>
 
       <Card>

@@ -87,6 +87,10 @@ export async function listPlansAdmin() {
   return prisma.plan.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { subscriptions: true } } } });
 }
 
+export async function listActivePlansAdmin() {
+  return prisma.plan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } });
+}
+
 export async function listSubscriptionsAdmin() {
   return prisma.subscription.findMany({
     include: { plan: true, company: true },

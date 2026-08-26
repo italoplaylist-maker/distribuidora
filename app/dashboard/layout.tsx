@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Header } from "@/components/layout/header";
 import { TrialBanner } from "@/components/layout/trial-banner";
+import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
 import { SIDEBAR_MAIN_NAV, SIDEBAR_SETTINGS_NAV, BOTTOM_NAV, MORE_NAV, type NavItem } from "@/components/layout/nav-config";
 import { OfflineSyncBanner } from "@/features/sales/offline-sync-banner";
 
@@ -23,6 +24,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         planName={tenant.company.subscription?.plan.name}
       />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        {tenant.impersonatedBy && <ImpersonationBanner adminName={tenant.impersonatedBy.adminName} companyName={tenant.company.nomeFantasia} />}
         <TrialBanner status={tenant.company.status} trialEndsAt={tenant.company.trialEndsAt} />
         <OfflineSyncBanner />
         <Header userName={tenant.userName} roleLabel={tenant.role ? ROLE_LABELS[tenant.role] : ""} />
