@@ -5,6 +5,10 @@ import { prisma } from "@/lib/database/prisma";
 import type { CompanyRole } from "@prisma/client";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Required behind a reverse proxy (Coolify/Traefik, Docker, etc.): the
+  // incoming Host header is proxied and won't necessarily match what
+  // Auth.js expects, so it must be told to trust it explicitly.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
