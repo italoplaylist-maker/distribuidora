@@ -3,6 +3,7 @@ import { getCurrentTenant, NotFoundError } from "@/lib/tenant/tenant-context";
 import { getProductOrThrow, listCategories, listBrands } from "@/features/products/queries";
 import { ProductForm } from "@/features/products/product-form";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,10 +20,10 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const [categories, brands] = await Promise.all([listCategories(tenant.companyId), listBrands(tenant.companyId)]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-xl font-bold">Editar produto</h1>
+    <div className="mx-auto max-w-2xl space-y-5">
+      <PageHeader title="Editar produto" />
       <Card>
-        <CardContent className="pt-5">
+        <CardContent className="pt-6">
           <ProductForm
             categories={categories}
             brands={brands}

@@ -1,19 +1,13 @@
 import { notFound } from "next/navigation";
+import { MapPin } from "lucide-react";
 import { getCurrentTenant, NotFoundError, ForbiddenError } from "@/lib/tenant/tenant-context";
 import { getDeliveryOrThrow, listActiveDrivers } from "@/features/deliveries/queries";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
+import { deliveryStatus } from "@/lib/status";
 import { formatDate } from "@/lib/utils";
 import { DeliveryStatusActions } from "@/features/deliveries/status-actions";
 import { AssignDriverSelect } from "@/features/deliveries/assign-driver-select";
-
-const STATUS_INFO: Record<string, { label: string; variant: "warning" | "secondary" | "success" | "destructive" }> = {
-  PENDING: { label: "Pendente", variant: "warning" },
-  IN_ROUTE: { label: "Em rota", variant: "secondary" },
-  DELIVERED: { label: "Entregue", variant: "success" },
-  FAILED: { label: "Falhou", variant: "destructive" },
-  CANCELED: { label: "Cancelada", variant: "secondary" },
-};
 
 export default async function DeliveryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,16 +25,21 @@ export default async function DeliveryDetailPage({ params }: { params: Promise<{
   }
 
   const drivers = tenant.role !== "MOTORISTA" ? await listActiveDrivers(tenant.companyId) : [];
-  const info = STATUS_INFO[delivery.status];
+  const status = deliveryStatus(delivery.status);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="mx-auto max-w-2xl space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold">{delivery.customer?.name ?? "Consumidor final"}</h1>
-          <p className="text-sm text-muted-foreground">{formatDate(delivery.createdAt)} · {delivery.address ?? "Sem endereço"}</p>
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em]">{delivery.customer?.name ?? "Consumidor final"}</h1>
+          <p className="text-[13.5px] text-muted-foreground">{formatDate(delivery.createdAt)}</p>
+          {delivery.address && (
+            <p className="mt-1 flex items-center gap-1.5 text-[13.5px] text-muted-foreground">
+              <MapPin className="size-3.5 shrink-0" /> {delivery.address}
+            </p>
+          )}
         </div>
-        <Badge variant={info.variant}>{info.label}</Badge>
+        <StatusBadge {...status} />
       </div>
 
       {tenant.role !== "MOTORISTA" && (
@@ -48,13 +47,15 @@ export default async function DeliveryDetailPage({ params }: { params: Promise<{
       )}
 
       <Card>
-        <CardContent className="pt-5">
-          <p className="mb-3 font-semibold">Itens da entrega</p>
-          <div className="divide-y divide-border">
+        <CardContent className="pt-6">
+          <p className="mb-1 text-[14px] font-semibold">Itens da entrega</p>
+          <div className="divide-y divide-border/60">
             {delivery.items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between py-2 text-sm">
+              <div key={item.id} className="flex items-center justify-between py-2.5 text-[13.5px]">
                 <p>{item.product.name}</p>
-                <p className="font-medium">{item.quantity.toString()} {item.product.unit}</p>
+                <p className="font-medium">
+                  {item.quantity.toString()} {item.product.unit}
+                </p>
               </div>
             ))}
           </div>

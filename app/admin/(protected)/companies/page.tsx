@@ -1,66 +1,85 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 import { listCompaniesAdmin } from "@/features/admin/queries";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { companyStatus } from "@/lib/status";
 import { formatDate } from "@/lib/utils";
-
-const STATUS_INFO: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "secondary" }> = {
-  TRIAL: { label: "Trial", variant: "warning" },
-  ACTIVE: { label: "Ativa", variant: "success" },
-  PAST_DUE: { label: "Inadimplente", variant: "warning" },
-  SUSPENDED: { label: "Suspensa", variant: "destructive" },
-  CANCELED: { label: "Cancelada", variant: "secondary" },
-};
 
 export default async function AdminCompaniesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const { q } = await searchParams;
   const companies = await listCompaniesAdmin(q);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold">Empresas</h1>
-        <p className="text-sm text-zinc-500">{companies.length} empresas cadastradas na plataforma</p>
-      </div>
+    <div className="space-y-5">
+      <PageHeader title="Empresas" description={`${companies.length} empresas cadastradas na plataforma`} />
 
-      <form className="max-w-sm">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Buscar por nome ou CNPJ"
-          className="h-11 w-full rounded-xl border border-zinc-800 bg-[#111315] px-3.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary/50"
-        />
+      <form className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input name="q" defaultValue={q} placeholder="Buscar por nome ou CNPJ" className="pl-9" />
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-800">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-900/60 text-xs uppercase text-zinc-500">
-            <tr>
-              <th className="p-3 text-left">Empresa</th>
-              <th className="p-3 text-left">Plano</th>
-              <th className="p-3 text-left">Usuários</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left">Cadastro</th>
-            </tr>
-          </thead>
-          <tbody>
-            {companies.map((c) => (
-              <tr key={c.id} className="border-t border-zinc-800 hover:bg-zinc-900/40">
-                <td className="p-3">
-                  <Link href={`/admin/companies/${c.id}`} className="font-medium text-zinc-100 hover:text-primary">
-                    {c.nomeFantasia}
-                  </Link>
-                  <p className="text-xs text-zinc-500">{c.cnpj}</p>
-                </td>
-                <td className="p-3 text-zinc-400">{c.subscription?.plan.name ?? "-"}</td>
-                <td className="p-3 text-zinc-400">{c._count.users}</td>
-                <td className="p-3">
-                  <Badge variant={STATUS_INFO[c.status].variant}>{STATUS_INFO[c.status].label}</Badge>
-                </td>
-                <td className="p-3 text-zinc-400">{formatDate(c.createdAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 gap-2.5 lg:hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {companies.map((c) => {
+          const status = companyStatus(c.status);
+          return (
+            <Link key={c.id} href={`/admin/companies/${c.id}`}>
+              <Card className="transition-colors hover:border-primary/25">
+                <CardContent className="space-y-2 pt-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{c.nomeFantasia}</p>
+                      <p className="truncate text-[12.5px] text-muted-foreground">{c.cnpj}</p>
+                    </div>
+                    <StatusBadge {...status} />
+                  </div>
+                  <div className="flex items-center justify-between text-[12.5px] text-muted-foreground">
+                    <span>{c.subscription?.plan.name ?? "Sem plano"} · {c._count.users} usuários</span>
+                    <span>{formatDate(c.createdAt)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="hidden lg:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Empresa</TableHead>
+              <TableHead>Plano</TableHead>
+              <TableHead>Usuários</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Cadastro</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {companies.map((c) => {
+              const status = companyStatus(c.status);
+              return (
+                <TableRow key={c.id}>
+                  <TableCell>
+                    <Link href={`/admin/companies/${c.id}`} className="font-medium hover:underline">
+                      {c.nomeFantasia}
+                    </Link>
+                    <p className="text-[12.5px] text-muted-foreground">{c.cnpj}</p>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{c.subscription?.plan.name ?? "-"}</TableCell>
+                  <TableCell className="text-muted-foreground">{c._count.users}</TableCell>
+                  <TableCell>
+                    <StatusBadge {...status} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(c.createdAt)}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

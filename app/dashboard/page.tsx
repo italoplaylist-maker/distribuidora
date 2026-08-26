@@ -1,9 +1,13 @@
-import Link from "next/link";
 import { getCurrentTenant } from "@/lib/tenant/tenant-context";
 import { getDashboardData } from "@/features/dashboard/queries";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { MetricCard } from "@/components/metric-card";
+import { ActionCard } from "@/components/action-card";
+import { RankingList } from "@/components/ranking-list";
+import { ActivityTimeline, type ActivityItem } from "@/components/activity-timeline";
 import { EmptyState } from "@/components/empty-state";
+import { SalesChartCard } from "@/features/dashboard/sales-chart-card";
+import { formatCurrency } from "@/lib/utils";
 import {
   Receipt,
   TrendingUp,
@@ -15,100 +19,198 @@ import {
   PackagePlus,
   HandCoins,
   ShoppingBag,
+  Boxes,
+  ShoppingCart,
 } from "lucide-react";
 
 export default async function DashboardPage() {
   const tenant = await getCurrentTenant();
   const data = await getDashboardData(tenant.companyId);
-
-  const kpis = [
-    { label: "Vendas hoje", value: data.vendasHoje.toString(), icon: Receipt },
-    { label: "Faturamento hoje", value: formatCurrency(data.faturamentoHoje), icon: TrendingUp },
-    { label: "Lucro hoje", value: formatCurrency(data.lucroHoje), icon: TrendingUp },
-    { label: "Saldo em caixa", value: data.saldoCaixa === null ? "Caixa fechado" : formatCurrency(data.saldoCaixa), icon: Wallet },
-    { label: "Contas a receber", value: formatCurrency(data.contasReceber), icon: ArrowDownCircle },
-    { label: "Contas a pagar", value: formatCurrency(data.contasPagar), icon: ArrowUpCircle },
-  ];
+  const firstName = tenant.userName.split(" ")[0];
+  const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
 
   const quickActions = [
-    { label: "Nova venda", href: "/dashboard/sales/new", icon: PlusCircle },
-    { label: "Entrada", href: "/dashboard/purchases/new", icon: PackagePlus },
-    { label: "Receber", href: "/dashboard/finance/receivables", icon: HandCoins },
-    { label: "Nova compra", href: "/dashboard/purchases/new", icon: ShoppingBag },
+    { label: "Nova venda", hint: "PDV", href: "/dashboard/sales/new", icon: <PlusCircle /> },
+    { label: "Entrada", hint: "Estoque", href: "/dashboard/purchases/new", icon: <PackagePlus /> },
+    { label: "Receber", hint: "Financeiro", href: "/dashboard/finance/receivables", icon: <HandCoins /> },
+    { label: "Nova compra", hint: "Fornecedor", href: "/dashboard/purchases/new", icon: <ShoppingBag /> },
+    { label: "Produto", hint: "Cadastro", href: "/dashboard/products/new", icon: <Boxes /> },
+    { label: "Caixa", hint: "Financeiro", href: "/dashboard/finance/cash", icon: <Wallet /> },
   ];
+
+  const activity: ActivityItem[] = [
+    ...data.recentSales.map((s) => ({
+      id: `sale-${s.id}`,
+      icon: Receipt,
+      tone: "primary" as const,
+      title: "Venda realizada",
+      subtitle: s.customer?.name ?? "Consumidor final",
+      amount: Number(s.totalAmount),
+      time: s.createdAt,
+    })),
+    ...data.recentPurchases.map((p) => ({
+      id: `purchase-${p.id}`,
+      icon: ShoppingCart,
+      tone: "neutral" as const,
+      title: "Entrada de estoque",
+      subtitle: p.supplier.name,
+      amount: Number(p.totalAmount),
+      amountTone: "negative" as const,
+      time: p.createdAt,
+    })),
+    ...data.recentReceipts.map((r) => ({
+      id: `receipt-${r.id}`,
+      icon: HandCoins,
+      tone: "success" as const,
+      title: "Pagamento recebido",
+      subtitle: r.description ?? "Recebimento",
+      amount: Number(r.amount),
+      time: r.createdAt,
+    })),
+  ]
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 8)
+    .map((item) => ({ ...item, time: formatRelativeTime(item.time) }));
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Olá, {tenant.userName.split(" ")[0]}</h1>
-        <p className="text-sm text-muted-foreground">Resumo da {tenant.company.nomeFantasia} hoje</p>
+        <h1 className="text-[24px] font-semibold tracking-[-0.015em] sm:text-[28px]">Olá, {firstName} 👋</h1>
+        <p className="text-[13.5px] capitalize text-muted-foreground">{today}</p>
       </div>
 
-      {data.estoqueBaixo > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
-          <AlertTriangle className="size-4 shrink-0" />
-          {data.estoqueBaixo} produto{data.estoqueBaixo > 1 ? "s estão" : " está"} com estoque baixo.
-          <Link href="/dashboard/products?filter=low-stock" className="ml-auto font-medium underline">
-            Ver produtos
-          </Link>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <MetricCard
+          index={0}
+          label="Vendas hoje"
+          value={data.vendasHoje.toString()}
+          icon={<Receipt />}
+          hint={formatCurrency(data.faturamentoHoje)}
+          trend={
+            data.variacaoVendas !== null
+              ? { value: `${Math.abs(data.variacaoVendas).toFixed(0)}%`, direction: data.variacaoVendas >= 0 ? "up" : "down" }
+              : undefined
+          }
+        />
+        <MetricCard
+          index={1}
+          label="Estoque"
+          value={formatCurrency(data.estoqueValor)}
+          icon={<Boxes />}
+          accent="neutral"
+          hint={`${data.estoqueProdutosCount} produtos`}
+          href="/dashboard/products"
+        />
+        <MetricCard
+          index={2}
+          label="A receber"
+          value={formatCurrency(data.contasReceber)}
+          icon={<ArrowDownCircle />}
+          accent="warning"
+          hint={`${data.receivablesPendingCount} pendentes`}
+          href="/dashboard/finance/receivables"
+        />
+        <MetricCard
+          index={3}
+          label="Caixa"
+          value={data.saldoCaixa === null ? "Fechado" : formatCurrency(data.saldoCaixa)}
+          icon={<Wallet />}
+          accent={data.saldoCaixa === null ? "neutral" : "success"}
+          hint={data.saldoCaixa === null ? "Abra o caixa para vender" : "Aberto"}
+          href="/dashboard/finance/cash"
+        />
+      </div>
+
+      <div>
+        <p className="mb-3 px-0.5 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground/70">Ações rápidas</p>
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+          {quickActions.map((a) => (
+            <ActionCard key={a.label} {...a} />
+          ))}
+        </div>
+      </div>
+
+      {data.contasPagar > 0 && (
+        <div className="flex items-center gap-2 rounded-lg border border-warning/25 bg-warning/8 p-3.5 text-[13.5px] text-warning">
+          <ArrowUpCircle className="size-4 shrink-0" />
+          Você tem {formatCurrency(data.contasPagar)} em contas a pagar em aberto.
+          <a href="/dashboard/finance/payables" className="ml-auto shrink-0 font-medium underline underline-offset-2">
+            Ver contas
+          </a>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {quickActions.map((a) => (
-          <Link
-            key={a.label}
-            href={a.href}
-            className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card p-4 text-center text-xs font-medium shadow-sm transition-colors hover:bg-muted"
-          >
-            <a.icon className="size-5 text-primary" />
-            {a.label}
-          </Link>
-        ))}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {kpis.map((kpi) => (
-          <Card key={kpi.label}>
-            <CardContent className="flex items-center gap-4 pt-5">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10">
-                <kpi.icon className="size-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{kpi.label}</p>
-                <p className="text-lg font-bold">{kpi.value}</p>
-              </div>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="space-y-5">
+          <Card>
+            <CardContent className="pt-6">
+              <SalesChartCard data={data.salesTrend} />
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      <Card>
-        <CardContent className="pt-5">
-          <p className="mb-3 font-semibold">Últimas vendas</p>
-          {data.recentSales.length === 0 ? (
-            <EmptyState
-              icon={Receipt}
-              title="Nenhuma venda encontrada"
-              description="Comece realizando sua primeira venda."
-              actionLabel="Nova venda"
-              actionHref="/dashboard/sales/new"
-            />
-          ) : (
-            <div className="divide-y divide-border">
-              {data.recentSales.map((sale) => (
-                <div key={sale.id} className="flex items-center justify-between py-2.5 text-sm">
-                  <div>
-                    <p className="font-medium">{sale.customer?.name ?? "Consumidor final"}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(sale.createdAt)}</p>
-                  </div>
-                  <p className="font-semibold">{formatCurrency(sale.totalAmount.toString())}</p>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="mb-4 font-semibold tracking-[-0.01em]">Produtos mais vendidos</p>
+              <RankingList items={data.topProducts} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-5">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="mb-1 flex items-center justify-between">
+                <p className="font-semibold tracking-[-0.01em]">Estoque baixo</p>
+                {data.lowStockItems.length > 0 && (
+                  <AlertTriangle className="size-4 text-warning" />
+                )}
+              </div>
+              {data.lowStockItems.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">Nenhum produto com estoque baixo. 🎉</p>
+              ) : (
+                <div className="divide-y divide-border/60">
+                  {data.lowStockItems.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between py-2.5 text-[13.5px]">
+                      <span className="truncate font-medium">{p.name}</span>
+                      <span className="shrink-0 font-medium text-warning">
+                        {p.stock} {p.unit}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+              <a
+                href="/dashboard/products?filter=low-stock"
+                className="mt-3 block text-center text-[13px] font-medium text-primary hover:underline"
+              >
+                Ver estoque
+              </a>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <p className="mb-1 font-semibold tracking-[-0.01em]">Atividade recente</p>
+              {activity.length === 0 ? (
+                <EmptyState icon={Receipt} title="Nenhuma atividade ainda" description="Comece realizando sua primeira venda." actionLabel="Nova venda" actionHref="/dashboard/sales/new" />
+              ) : (
+                <ActivityTimeline items={activity} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
+}
+
+function formatRelativeTime(date: Date): string {
+  const diffMs = Date.now() - new Date(date).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "agora";
+  if (minutes < 60) return `há ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `há ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `há ${days}d`;
 }

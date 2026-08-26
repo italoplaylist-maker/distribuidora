@@ -36,18 +36,19 @@ export interface NavItem {
   permission?: Permission;
 }
 
-export const SIDEBAR_NAV: NavItem[] = [
+export const SIDEBAR_MAIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
   { href: "/dashboard/sales", label: "Vendas", icon: "sales", permission: PERMISSIONS.SALES_VIEW },
-  { href: "/dashboard/purchases", label: "Compras", icon: "purchases", permission: PERMISSIONS.PURCHASES_VIEW },
   { href: "/dashboard/products", label: "Estoque", icon: "stock", permission: PERMISSIONS.STOCK_VIEW },
+  { href: "/dashboard/purchases", label: "Compras", icon: "purchases", permission: PERMISSIONS.PURCHASES_VIEW },
   { href: "/dashboard/customers", label: "Clientes", icon: "customers", permission: PERMISSIONS.CUSTOMERS_VIEW },
   { href: "/dashboard/suppliers", label: "Fornecedores", icon: "suppliers", permission: PERMISSIONS.SUPPLIERS_VIEW },
   { href: "/dashboard/finance", label: "Financeiro", icon: "finance", permission: PERMISSIONS.FINANCE_VIEW },
   { href: "/dashboard/deliveries", label: "Entregas", icon: "deliveries", permission: PERMISSIONS.DELIVERIES_VIEW },
   { href: "/dashboard/reports", label: "Relatórios", icon: "reports", permission: PERMISSIONS.REPORTS_VIEW },
-  { href: "/dashboard/settings", label: "Configurações", icon: "settings" },
 ];
+
+export const SIDEBAR_SETTINGS_NAV: NavItem[] = [{ href: "/dashboard/settings", label: "Configurações", icon: "settings" }];
 
 export const BOTTOM_NAV: NavItem[] = [
   { href: "/dashboard", label: "Início", icon: "dashboard" },

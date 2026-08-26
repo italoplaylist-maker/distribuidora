@@ -7,7 +7,14 @@ import { Loader2, HandCoins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+} from "@/components/responsive-dialog";
 import { formatCurrency } from "@/lib/utils";
 
 export function PayDialog({
@@ -41,20 +48,20 @@ export function PayDialog({
 
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}>
+      <Button size="sm" className="w-full sm:w-auto" onClick={() => setOpen(true)}>
         <HandCoins className="size-3.5" /> {label}
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{label}</DialogTitle>
-            <DialogDescription>Saldo em aberto: {formatCurrency(remaining)}</DialogDescription>
-          </DialogHeader>
+      <ResponsiveDialog open={open} onOpenChange={setOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>{label}</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription>Saldo em aberto: {formatCurrency(remaining)}</ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
           <div className="space-y-1.5">
             <Label>Valor</Label>
             <Input type="number" step="0.01" max={remaining} value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
-          <DialogFooter>
+          <ResponsiveDialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
@@ -62,9 +69,9 @@ export function PayDialog({
               {isPending && <Loader2 className="animate-spin" />}
               Confirmar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }

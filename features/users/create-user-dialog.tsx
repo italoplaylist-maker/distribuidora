@@ -8,7 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogFooter,
+} from "@/components/responsive-dialog";
 import { createCompanyUserAction } from "@/features/users/actions";
 
 const ROLES = [
@@ -46,11 +52,11 @@ export function CreateUserDialog() {
       <Button onClick={() => setOpen(true)}>
         <UserPlus className="size-4" /> Novo usuário
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Novo usuário</DialogTitle>
-          </DialogHeader>
+      <ResponsiveDialog open={open} onOpenChange={setOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Novo usuário</ResponsiveDialogTitle>
+          </ResponsiveDialogHeader>
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label>Nome</Label>
@@ -79,7 +85,7 @@ export function CreateUserDialog() {
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter>
+            <ResponsiveDialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
@@ -87,10 +93,10 @@ export function CreateUserDialog() {
                 {isPending && <Loader2 className="animate-spin" />}
                 Criar usuário
               </Button>
-            </DialogFooter>
+            </ResponsiveDialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }

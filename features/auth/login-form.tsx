@@ -38,7 +38,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
         <Label htmlFor="password">Senha</Label>
         <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
       </div>
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" size="lg" className="w-full" disabled={isPending}>
         {isPending && <Loader2 className="animate-spin" />}
         Entrar
       </Button>

@@ -1,5 +1,6 @@
 import { getCurrentTenant } from "@/lib/tenant/tenant-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 import { CompanyProfileForm } from "@/features/company/company-profile-form";
 import { CompanySettingsForm } from "@/features/company/company-settings-form";
 
@@ -7,8 +8,8 @@ export default async function CompanySettingsPage() {
   const tenant = await getCurrentTenant();
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-xl font-bold">Minha empresa</h1>
+    <div className="mx-auto max-w-2xl space-y-5">
+      <PageHeader title="Minha empresa" />
 
       <Card>
         <CardHeader>

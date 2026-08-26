@@ -8,7 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogFooter,
+} from "@/components/responsive-dialog";
 import { openCashRegisterAction, closeCashRegisterAction, createCashMovementAction } from "@/features/finance/actions";
 
 export function OpenCashButton() {
@@ -35,23 +41,23 @@ export function OpenCashButton() {
       <Button onClick={() => setOpen(true)}>
         <Unlock className="size-4" /> Abrir caixa
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Abrir caixa</DialogTitle>
-          </DialogHeader>
+      <ResponsiveDialog open={open} onOpenChange={setOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Abrir caixa</ResponsiveDialogTitle>
+          </ResponsiveDialogHeader>
           <div className="space-y-1.5">
             <Label>Valor de abertura</Label>
             <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
-          <DialogFooter>
+          <ResponsiveDialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={onConfirm} disabled={isPending}>
               {isPending && <Loader2 className="animate-spin" />} Confirmar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }
@@ -82,30 +88,30 @@ export function CloseCashButton({ cashRegisterId, expectedBalance }: { cashRegis
       <Button variant="outline" onClick={() => setOpen(true)}>
         <Lock className="size-4" /> Fechar caixa
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Fechar caixa</DialogTitle>
-          </DialogHeader>
+      <ResponsiveDialog open={open} onOpenChange={setOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Fechar caixa</ResponsiveDialogTitle>
+          </ResponsiveDialogHeader>
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Saldo esperado: {expectedBalance.toFixed(2)}</p>
+            <p className="text-[13.5px] text-muted-foreground">Saldo esperado: {expectedBalance.toFixed(2)}</p>
             <Label>Valor informado (contagem física)</Label>
             <Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
             {difference !== 0 && (
-              <p className={difference < 0 ? "text-sm text-destructive" : "text-sm text-success"}>
+              <p className={difference < 0 ? "text-[13.5px] text-destructive" : "text-[13.5px] text-success"}>
                 Diferença: {difference > 0 ? "+" : ""}
                 {difference.toFixed(2)}
               </p>
             )}
           </div>
-          <DialogFooter>
+          <ResponsiveDialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={onConfirm} disabled={isPending}>
               {isPending && <Loader2 className="animate-spin" />} Confirmar fechamento
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }
@@ -138,11 +144,11 @@ export function CashMovementButton() {
       <Button variant="outline" onClick={() => setOpen(true)}>
         <ArrowDownCircle className="size-4" /> Sangria/Suprimento
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Movimentação de caixa</DialogTitle>
-          </DialogHeader>
+      <ResponsiveDialog open={open} onOpenChange={setOpen}>
+        <ResponsiveDialogContent>
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>Movimentação de caixa</ResponsiveDialogTitle>
+          </ResponsiveDialogHeader>
           <div className="space-y-3">
             <Select value={type} onValueChange={(v) => setType(v as "SANGRIA" | "SUPRIMENTO")}>
               <SelectTrigger>
@@ -162,14 +168,14 @@ export function CashMovementButton() {
               <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: retirada para depósito" />
             </div>
           </div>
-          <DialogFooter>
+          <ResponsiveDialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={onConfirm} disabled={isPending || !amount || !description}>
               {isPending && <Loader2 className="animate-spin" />} Confirmar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveDialogFooter>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }

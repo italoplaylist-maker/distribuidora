@@ -4,7 +4,7 @@ import { NotFoundError } from "@/lib/tenant/tenant-context";
 
 export async function searchSaleProducts(companyId: string, query: string) {
   if (!query || query.trim().length < 1) {
-    return prisma.product.findMany({ where: { companyId, active: true }, orderBy: { name: "asc" }, take: 12 });
+    return prisma.product.findMany({ where: { companyId, active: true }, include: { brand: true }, orderBy: { name: "asc" }, take: 12 });
   }
   return prisma.product.findMany({
     where: {
@@ -16,6 +16,7 @@ export async function searchSaleProducts(companyId: string, query: string) {
         { barcode: { contains: query } },
       ],
     },
+    include: { brand: true },
     take: 12,
     orderBy: { name: "asc" },
   });

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Building2, Users, ScrollText, CreditCard, SlidersHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 
 const ITEMS = [
   { href: "/dashboard/settings/company", label: "Minha empresa", desc: "Dados cadastrais e preferências operacionais", icon: Building2 },
@@ -11,27 +12,27 @@ const ITEMS = [
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">Configurações</h1>
-      <div className="grid gap-3 sm:grid-cols-2">
+    <div className="space-y-5">
+      <PageHeader title="Configurações" />
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
         {ITEMS.map((item) => (
           <Link key={item.href} href={item.href}>
-            <Card className="transition-colors hover:bg-muted">
+            <Card className="transition-colors hover:border-primary/25">
               <CardContent className="flex items-center gap-4 pt-5">
-                <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <item.icon className="size-5 text-primary" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="font-medium">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  <p className="text-[12.5px] text-muted-foreground">{item.desc}</p>
                 </div>
               </CardContent>
             </Card>
           </Link>
         ))}
       </div>
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <SlidersHorizontal className="size-3.5" /> Mais preferências de estoque e vendas estão disponíveis em Minha empresa.
+      <p className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+        <SlidersHorizontal className="size-3.5 shrink-0" /> Mais preferências de estoque e vendas estão disponíveis em Minha empresa.
       </p>
     </div>
   );

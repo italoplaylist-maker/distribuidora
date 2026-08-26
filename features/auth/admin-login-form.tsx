@@ -31,34 +31,14 @@ export function AdminLoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-zinc-300">
-          E-mail administrativo
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600"
-          placeholder="admin@plataforma.com"
-        />
+        <Label htmlFor="email">E-mail administrativo</Label>
+        <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@plataforma.com" />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-zinc-300">
-          Senha
-        </Label>
-        <Input
-          id="password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600"
-          placeholder="••••••••"
-        />
+        <Label htmlFor="password">Senha</Label>
+        <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
       </div>
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" size="lg" className="w-full" disabled={isPending}>
         {isPending && <Loader2 className="animate-spin" />}
         Acessar painel
       </Button>

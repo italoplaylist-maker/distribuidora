@@ -3,6 +3,7 @@ import { getCurrentTenant, NotFoundError } from "@/lib/tenant/tenant-context";
 import { getSupplierOrThrow } from "@/features/suppliers/queries";
 import { SupplierForm } from "@/features/suppliers/supplier-form";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 
 export default async function EditSupplierPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,7 +19,7 @@ export default async function EditSupplierPage({ params }: { params: Promise<{ i
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-xl font-bold">Editar fornecedor</h1>
+      <PageHeader title="Editar fornecedor" />
       <Card>
         <CardContent className="pt-5">
           <SupplierForm

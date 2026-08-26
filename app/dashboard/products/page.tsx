@@ -3,11 +3,20 @@ import { PackagePlus, Boxes } from "lucide-react";
 import { getCurrentTenant } from "@/lib/tenant/tenant-context";
 import { listProducts } from "@/features/products/queries";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
+import { ProductCard } from "@/components/product-card";
+import { StatusBadge } from "@/components/status-badge";
+import { stockLevelStatus } from "@/lib/status";
 import { formatCurrency } from "@/lib/utils";
 import { ProductsSearch } from "@/features/products/products-search";
+
+const FILTER_MAP: Record<string, "low" | "zero" | "recent" | undefined> = {
+  "low-stock": "low",
+  "zero-stock": "zero",
+  recent: "recent",
+};
 
 export default async function ProductsPage({
   searchParams,
@@ -16,23 +25,23 @@ export default async function ProductsPage({
 }) {
   const { q, filter } = await searchParams;
   const tenant = await getCurrentTenant();
-  const products = await listProducts(tenant.companyId, { search: q, lowStock: filter === "low-stock" });
+  const products = await listProducts(tenant.companyId, { search: q, stockFilter: filter ? FILTER_MAP[filter] : undefined });
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold">Produtos</h1>
-          <p className="text-sm text-muted-foreground">{products.length} produtos cadastrados</p>
-        </div>
-        <Button asChild>
-          <Link href="/dashboard/products/new">
-            <PackagePlus className="size-4" /> Novo produto
-          </Link>
-        </Button>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Produtos"
+        description={`${products.length} produtos cadastrados`}
+        action={
+          <Button asChild>
+            <Link href="/dashboard/products/new">
+              <PackagePlus className="size-4" /> Novo produto
+            </Link>
+          </Button>
+        }
+      />
 
-      <ProductsSearch defaultValue={q} lowStockActive={filter === "low-stock"} />
+      <ProductsSearch defaultValue={q} activeFilter={filter} />
 
       {products.length === 0 ? (
         <EmptyState
@@ -43,42 +52,61 @@ export default async function ProductsPage({
           actionHref="/dashboard/products/new"
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Produto</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Estoque</TableHead>
-              <TableHead>Preço</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products.map((p) => {
-              const low = Number(p.stock) <= Number(p.minStock);
-              return (
-                <TableRow key={p.id} className="cursor-pointer">
-                  <TableCell>
-                    <Link href={`/dashboard/products/${p.id}`} className="font-medium hover:underline">
-                      {p.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{p.sku ?? "-"}</TableCell>
-                  <TableCell className="text-muted-foreground">{p.category?.name ?? "-"}</TableCell>
-                  <TableCell>
-                    <span className={low ? "font-medium text-warning" : ""}>{p.stock.toString()}</span>
-                    {low && (
-                      <Badge variant="warning" className="ml-2">
-                        Baixo
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">{formatCurrency(p.price.toString())}</TableCell>
+        <>
+          <div className="grid grid-cols-1 gap-2.5 lg:hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {products.map((p) => (
+              <ProductCard
+                key={p.id}
+                id={p.id}
+                name={p.name}
+                brand={p.brand?.name}
+                category={p.category?.name}
+                photoUrl={p.photoUrl}
+                stock={Number(p.stock)}
+                unit={p.unit}
+                price={p.price.toNumber()}
+                minStock={Number(p.minStock)}
+              />
+            ))}
+          </div>
+
+          <div className="hidden lg:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Produto</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Estoque</TableHead>
+                  <TableHead>Preço</TableHead>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              </TableHeader>
+              <TableBody>
+                {products.map((p) => {
+                  const status = stockLevelStatus(Number(p.stock), Number(p.minStock));
+                  return (
+                    <TableRow key={p.id} className="cursor-pointer">
+                      <TableCell>
+                        <Link href={`/dashboard/products/${p.id}`} className="font-medium hover:underline">
+                          {p.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{p.sku ?? "-"}</TableCell>
+                      <TableCell className="text-muted-foreground">{p.category?.name ?? "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className={status ? "font-medium text-warning" : ""}>{p.stock.toString()}</span>
+                          {status && <StatusBadge {...status} />}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{formatCurrency(p.price.toString())}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

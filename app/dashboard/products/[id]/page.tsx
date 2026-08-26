@@ -1,26 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, Receipt, PackagePlus, History } from "lucide-react";
-import { getCurrentTenant } from "@/lib/tenant/tenant-context";
+import { Pencil, Receipt, PackagePlus, History, SlidersHorizontal, Package } from "lucide-react";
+import { getCurrentTenant, NotFoundError } from "@/lib/tenant/tenant-context";
 import { getProductOrThrow, getProductStockHistory } from "@/features/products/queries";
-import { NotFoundError } from "@/lib/tenant/tenant-context";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
+import { stockLevelStatus, STOCK_MOVEMENT_LABELS } from "@/lib/status";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { StockAdjustSheet } from "@/features/products/stock-adjust-sheet";
-
-const MOVEMENT_LABELS: Record<string, string> = {
-  ENTRADA: "Entrada",
-  SAIDA: "Saída",
-  VENDA: "Venda",
-  COMPRA: "Compra",
-  AJUSTE: "Ajuste",
-  INVENTARIO: "Inventário",
-  PERDA: "Perda",
-  AVARIA: "Avaria",
-  DEVOLUCAO: "Devolução",
-};
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,91 +23,80 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   }
 
   const movements = await getProductStockHistory(tenant.companyId, id);
-  const low = Number(product.stock) <= Number(product.minStock);
+  const status = stockLevelStatus(Number(product.stock), Number(product.minStock));
+  const unitsSold = movements.filter((m) => m.type === "VENDA").reduce((sum, m) => sum + Math.abs(Number(m.quantity)), 0);
+  const margin = product.price.toNumber() > 0 ? ((product.price.toNumber() - product.averageCost.toNumber()) / product.price.toNumber()) * 100 : null;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold">{product.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            {product.category?.name ?? "Sem categoria"} · {product.brand?.name ?? "Sem marca"} · SKU {product.sku ?? "-"}
-          </p>
+    <div className="mx-auto max-w-3xl space-y-5">
+      <div className="flex items-start gap-4">
+        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary sm:size-20">
+          {product.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={product.photoUrl} alt={product.name} className="size-full object-cover" />
+          ) : (
+            <Package className="size-8 text-muted-foreground/60" strokeWidth={1.5} />
+          )}
         </div>
-        <Button variant="outline" asChild>
-          <Link href={`/dashboard/products/${id}/edit`}>
-            <Pencil className="size-4" /> Editar
-          </Link>
-        </Button>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h1 className="text-[20px] font-semibold leading-tight tracking-[-0.01em] sm:text-[24px]">{product.name}</h1>
+              <p className="text-[13px] text-muted-foreground">
+                {product.category?.name ?? "Sem categoria"} · {product.brand?.name ?? "Sem marca"} · SKU {product.sku ?? "-"}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/dashboard/products/${id}/edit`}>
+                <Pencil className="size-3.5" /> Editar
+              </Link>
+            </Button>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <p className="text-[22px] font-semibold tracking-[-0.01em]">{formatCurrency(product.price.toString())}</p>
+            {status ? <StatusBadge {...status} /> : <StatusBadge label="Em estoque" tone="success" />}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2.5 sm:gap-3">
+        <QuickAction href={`/dashboard/sales/new?productId=${id}`} icon={<Receipt />} label="Vender" />
+        <QuickAction href={`/dashboard/purchases/new?productId=${id}`} icon={<PackagePlus />} label="Entrada" />
+        <StockAdjustSheet
+          productId={id}
+          currentStock={product.stock.toString()}
+          unit={product.unit}
+          trigger={
+            <button className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-card py-3.5 text-center shadow-[var(--shadow-card)] transition-colors hover:border-primary/30 hover:bg-primary/5">
+              <SlidersHorizontal className="size-[18px] text-primary" />
+              <span className="text-[12px] font-medium">Ajustar</span>
+            </button>
+          }
+        />
+        <QuickAction href="#historico" icon={<History />} label="Histórico" />
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Button variant="outline" asChild className="h-auto flex-col gap-2 py-4">
-          <Link href={`/dashboard/sales/new?productId=${id}`}>
-            <Receipt className="size-5 text-primary" /> Vender
-          </Link>
-        </Button>
-        <Button variant="outline" asChild className="h-auto flex-col gap-2 py-4">
-          <Link href={`/dashboard/purchases/new?productId=${id}`}>
-            <PackagePlus className="size-5 text-primary" /> Entrada
-          </Link>
-        </Button>
-        <div className="h-auto">
-          <StockAdjustSheet productId={id} currentStock={product.stock.toString()} unit={product.unit} />
-        </div>
-        <Button variant="outline" className="h-auto flex-col gap-2 py-4" asChild>
-          <a href="#historico">
-            <History className="size-5 text-primary" /> Histórico
-          </a>
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground">Estoque atual</p>
-            <p className="text-lg font-bold">
-              {product.stock.toString()} {product.unit}
-            </p>
-            {low && <Badge variant="warning" className="mt-1">Estoque baixo</Badge>}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground">Preço de venda</p>
-            <p className="text-lg font-bold">{formatCurrency(product.price.toString())}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground">Custo médio</p>
-            <p className="text-lg font-bold">{formatCurrency(product.averageCost.toString())}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground">Margem</p>
-            <p className="text-lg font-bold">
-              {product.price.toNumber() > 0
-                ? `${(((product.price.toNumber() - product.averageCost.toNumber()) / product.price.toNumber()) * 100).toFixed(1)}%`
-                : "-"}
-            </p>
-          </CardContent>
-        </Card>
+        <Stat label="Estoque atual" value={`${product.stock.toString()} ${product.unit}`} />
+        <Stat label="Custo médio" value={formatCurrency(product.averageCost.toString())} />
+        <Stat label="Margem" value={margin !== null ? `${margin.toFixed(1)}%` : "-"} />
+        <Stat label="Unidades vendidas" value={unitsSold.toString()} />
       </div>
 
       <Card id="historico">
-        <CardContent className="pt-5">
-          <p className="mb-3 font-semibold">Histórico de movimentações</p>
+        <CardContent className="pt-6">
+          <p className="mb-3 font-semibold tracking-[-0.01em]">Histórico de movimentações</p>
           {movements.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma movimentação registrada.</p>
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border/60">
               {movements.map((m) => (
-                <div key={m.id} className="flex items-center justify-between py-2 text-sm">
+                <div key={m.id} className="flex items-center justify-between py-2.5 text-[13.5px]">
                   <div>
-                    <p className="font-medium">{MOVEMENT_LABELS[m.type] ?? m.type}</p>
-                    <p className="text-xs text-muted-foreground">{formatDate(m.createdAt)} {m.reason ? `· ${m.reason}` : ""}</p>
+                    <p className="font-medium">{STOCK_MOVEMENT_LABELS[m.type] ?? m.type}</p>
+                    <p className="text-[12.5px] text-muted-foreground">
+                      {formatDate(m.createdAt)} {m.reason ? `· ${m.reason}` : ""}
+                    </p>
                   </div>
                   <p className={Number(m.quantity) < 0 ? "font-semibold text-destructive" : "font-semibold text-success"}>
                     {Number(m.quantity) > 0 ? "+" : ""}
@@ -132,5 +109,28 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function QuickAction({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-card py-3.5 text-center shadow-[var(--shadow-card)] transition-colors hover:border-primary/30 hover:bg-primary/5 [&_svg]:size-[18px] [&_svg]:text-primary"
+    >
+      {icon}
+      <span className="text-[12px] font-medium">{label}</span>
+    </Link>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <Card>
+      <CardContent className="pt-5">
+        <p className="text-[12px] text-muted-foreground">{label}</p>
+        <p className="text-[17px] font-semibold tracking-[-0.01em]">{value}</p>
+      </CardContent>
+    </Card>
   );
 }
