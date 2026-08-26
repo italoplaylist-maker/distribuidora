@@ -1,47 +1,70 @@
 import { listSubscriptionsAdmin } from "@/features/admin/queries";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
+import { subscriptionStatus } from "@/lib/status";
 import { formatCurrency, formatDate } from "@/lib/utils";
-
-const STATUS_INFO: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "secondary" }> = {
-  TRIALING: { label: "Trial", variant: "warning" },
-  ACTIVE: { label: "Ativa", variant: "success" },
-  PAST_DUE: { label: "Inadimplente", variant: "warning" },
-  CANCELED: { label: "Cancelada", variant: "secondary" },
-};
 
 export default async function AdminSubscriptionsPage() {
   const subscriptions = await listSubscriptionsAdmin();
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">Assinaturas</h1>
-      <div className="overflow-x-auto rounded-xl border border-zinc-800">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-900/60 text-xs uppercase text-zinc-500">
-            <tr>
-              <th className="p-3 text-left">Empresa</th>
-              <th className="p-3 text-left">Plano</th>
-              <th className="p-3 text-left">Ciclo</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left">Próxima cobrança</th>
-            </tr>
-          </thead>
-          <tbody>
-            {subscriptions.map((s) => (
-              <tr key={s.id} className="border-t border-zinc-800">
-                <td className="p-3 font-medium text-zinc-100">{s.company.nomeFantasia}</td>
-                <td className="p-3 text-zinc-400">
-                  {s.plan.name} · {formatCurrency(s.billingCycle === "yearly" ? s.plan.priceYearly.toString() : s.plan.priceMonthly.toString())}
-                </td>
-                <td className="p-3 text-zinc-400">{s.billingCycle === "yearly" ? "Anual" : "Mensal"}</td>
-                <td className="p-3">
-                  <Badge variant={STATUS_INFO[s.status].variant}>{STATUS_INFO[s.status].label}</Badge>
-                </td>
-                <td className="p-3 text-zinc-400">{formatDate(s.currentPeriodEnd)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="space-y-5">
+      <PageHeader title="Assinaturas" description={`${subscriptions.length} assinaturas na plataforma`} />
+
+      <div className="grid grid-cols-1 gap-2.5 lg:hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {subscriptions.map((s) => {
+          const status = subscriptionStatus(s.status);
+          const price = s.billingCycle === "yearly" ? s.plan.priceYearly : s.plan.priceMonthly;
+          return (
+            <Card key={s.id}>
+              <CardContent className="space-y-2 pt-5">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="truncate font-medium">{s.company.nomeFantasia}</p>
+                  <StatusBadge {...status} />
+                </div>
+                <p className="text-[12.5px] text-muted-foreground">
+                  {s.plan.name} · {formatCurrency(price.toString())} · {s.billingCycle === "yearly" ? "Anual" : "Mensal"}
+                </p>
+                <p className="text-[12.5px] text-muted-foreground">Próxima cobrança em {formatDate(s.currentPeriodEnd)}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="hidden lg:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Empresa</TableHead>
+              <TableHead>Plano</TableHead>
+              <TableHead>Ciclo</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Próxima cobrança</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {subscriptions.map((s) => {
+              const status = subscriptionStatus(s.status);
+              const price = s.billingCycle === "yearly" ? s.plan.priceYearly : s.plan.priceMonthly;
+              return (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">{s.company.nomeFantasia}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {s.plan.name} · {formatCurrency(price.toString())}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{s.billingCycle === "yearly" ? "Anual" : "Mensal"}</TableCell>
+                  <TableCell>
+                    <StatusBadge {...status} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(s.currentPeriodEnd)}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

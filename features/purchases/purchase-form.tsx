@@ -113,23 +113,23 @@ export function PurchaseForm({ suppliers, initialProductId }: { suppliers: Suppl
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar produto por nome, SKU ou código de barras" className="pl-9" />
         </div>
         {isSearching && <p className="text-sm text-muted-foreground">Buscando...</p>}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {results.map((p) => (
             <button
               key={p.id}
               onClick={() => addToCart(p)}
-              className="flex flex-col items-start gap-1 rounded-xl border border-border bg-card p-3 text-left shadow-sm hover:bg-muted"
+              className="flex flex-col items-start gap-1 rounded-lg border border-border/60 bg-card p-3 text-left shadow-[var(--shadow-xs)] transition-colors hover:border-primary/25 active:scale-[0.98]"
             >
-              <span className="text-sm font-medium leading-tight">{p.name}</span>
-              <span className="text-xs text-muted-foreground">Estoque: {p.stock}</span>
-              <span className="font-bold text-primary">{formatCurrency(p.cost)}</span>
+              <span className="text-[13.5px] font-medium leading-tight">{p.name}</span>
+              <span className="text-[12px] text-muted-foreground">Estoque: {p.stock}</span>
+              <span className="font-semibold text-primary">{formatCurrency(p.cost)}</span>
             </button>
           ))}
         </div>
       </div>
 
       <Card className="h-fit lg:sticky lg:top-20">
-        <CardContent className="space-y-4 pt-5">
+        <CardContent className="space-y-4 pt-6">
           <div className="space-y-1.5">
             <Select value={supplierId} onValueChange={setSupplierId}>
               <SelectTrigger>
@@ -146,11 +146,11 @@ export function PurchaseForm({ suppliers, initialProductId }: { suppliers: Suppl
           </div>
 
           <div className="max-h-72 space-y-2 overflow-y-auto">
-            {cart.length === 0 && <p className="text-sm text-muted-foreground">Nenhum item adicionado</p>}
+            {cart.length === 0 && <p className="text-[13.5px] text-muted-foreground">Nenhum item adicionado</p>}
             {cart.map((line) => (
-              <div key={line.productId} className="space-y-1.5 rounded-lg border border-border p-2">
+              <div key={line.productId} className="space-y-1.5 rounded-lg border border-border/60 p-2">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="flex-1 text-sm font-medium leading-tight">{line.name}</p>
+                  <p className="flex-1 text-[13.5px] font-medium leading-tight">{line.name}</p>
                   <Button type="button" size="icon" variant="ghost" className="size-6 text-destructive" onClick={() => removeLine(line.productId)}>
                     <Trash2 className="size-3" />
                   </Button>
@@ -188,7 +188,7 @@ export function PurchaseForm({ suppliers, initialProductId }: { suppliers: Suppl
             </SelectContent>
           </Select>
 
-          <div className="flex justify-between border-t border-border pt-3 text-lg font-bold">
+          <div className="flex justify-between border-t border-border/70 pt-3.5 text-[19px] font-semibold">
             <span>Total</span>
             <span>{formatCurrency(total)}</span>
           </div>

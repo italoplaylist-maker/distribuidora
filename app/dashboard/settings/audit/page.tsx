@@ -2,6 +2,7 @@ import { getCurrentTenant } from "@/lib/tenant/tenant-context";
 import { listCompanyAuditLogs } from "@/features/audit/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { ScrollText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -42,23 +43,23 @@ export default async function AuditPage() {
   const logs = await listCompanyAuditLogs(tenant.companyId);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">Auditoria</h1>
+    <div className="space-y-5">
+      <PageHeader title="Auditoria" description={`${logs.length} registros`} />
       {logs.length === 0 ? (
         <EmptyState icon={ScrollText} title="Nenhum registro de auditoria" description="As ações realizadas no sistema aparecerão aqui." />
       ) : (
         <Card>
-          <CardContent className="divide-y divide-border pt-5">
+          <CardContent className="divide-y divide-border/60 pt-6">
             {logs.map((log) => (
-              <div key={log.id} className="flex items-start justify-between gap-4 py-3 text-sm">
+              <div key={log.id} className="flex items-start justify-between gap-4 py-3 text-[13.5px]">
                 <div>
                   <p className="font-medium">{ACTION_LABELS[log.action] ?? log.action}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[12.5px] text-muted-foreground">
                     {log.user?.name ?? "Sistema"} · {log.entity}
                     {log.entityId ? ` #${log.entityId.slice(-6)}` : ""}
                   </p>
                 </div>
-                <p className="whitespace-nowrap text-xs text-muted-foreground">{formatDate(log.createdAt)}</p>
+                <p className="whitespace-nowrap text-[12.5px] text-muted-foreground">{formatDate(log.createdAt)}</p>
               </div>
             ))}
           </CardContent>

@@ -4,10 +4,16 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function ProductsSearch({ defaultValue, lowStockActive }: { defaultValue?: string; lowStockActive?: boolean }) {
+const FILTERS = [
+  { value: "", label: "Todos" },
+  { value: "low-stock", label: "Baixo" },
+  { value: "zero-stock", label: "Zerado" },
+  { value: "recent", label: "Recentes" },
+];
+
+export function ProductsSearch({ defaultValue, activeFilter }: { defaultValue?: string; activeFilter?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -28,9 +34,9 @@ export function ProductsSearch({ defaultValue, lowStockActive }: { defaultValue?
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="relative flex-1 min-w-[200px]">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={value}
           onChange={(e) => {
@@ -38,18 +44,25 @@ export function ProductsSearch({ defaultValue, lowStockActive }: { defaultValue?
             updateParams({ q: e.target.value });
           }}
           placeholder="Buscar por nome, SKU ou código de barras"
-          className="pl-9"
+          className="pl-10"
         />
       </div>
-      <Button
-        type="button"
-        variant={lowStockActive ? "default" : "outline"}
-        size="sm"
-        className={cn("h-11")}
-        onClick={() => updateParams({ filter: lowStockActive ? "" : "low-stock" })}
-      >
-        Estoque baixo
-      </Button>
+      <div className="flex gap-2 overflow-x-auto scrollbar-none">
+        {FILTERS.map((f) => (
+          <button
+            key={f.value}
+            onClick={() => updateParams({ filter: f.value })}
+            className={cn(
+              "shrink-0 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors",
+              (activeFilter ?? "") === f.value
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border/70 bg-card text-muted-foreground hover:bg-muted",
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

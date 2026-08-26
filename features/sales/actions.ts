@@ -26,6 +26,8 @@ export async function searchProductsAction(query: string) {
     stock: p.stock.toString(),
     unit: p.unit,
     sku: p.sku,
+    brand: p.brand?.name ?? null,
+    photoUrl: p.photoUrl,
   }));
 }
 

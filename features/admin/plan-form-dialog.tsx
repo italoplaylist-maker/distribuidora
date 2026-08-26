@@ -8,7 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogFooter,
+} from "@/components/responsive-dialog";
 import { createPlanAction, updatePlanAction } from "@/features/admin/actions";
 import type { PlanInput } from "@/schemas/admin";
 
@@ -71,11 +77,11 @@ export function PlanFormDialog({ plan }: { plan?: (PlanInput & { id: string }) |
         {plan ? <Pencil className="size-3.5" /> : <Plus className="size-4" />}
         {plan ? "Editar" : "Novo plano"}
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{plan ? "Editar plano" : "Novo plano"}</DialogTitle>
-          </DialogHeader>
+      <ResponsiveDialog open={open} onOpenChange={setOpen}>
+        <ResponsiveDialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <ResponsiveDialogHeader>
+            <ResponsiveDialogTitle>{plan ? "Editar plano" : "Novo plano"}</ResponsiveDialogTitle>
+          </ResponsiveDialogHeader>
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -128,7 +134,7 @@ export function PlanFormDialog({ plan }: { plan?: (PlanInput & { id: string }) |
               </div>
             </div>
 
-            <DialogFooter>
+            <ResponsiveDialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
@@ -136,10 +142,10 @@ export function PlanFormDialog({ plan }: { plan?: (PlanInput & { id: string }) |
                 {isPending && <Loader2 className="animate-spin" />}
                 Salvar
               </Button>
-            </DialogFooter>
+            </ResponsiveDialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </>
   );
 }

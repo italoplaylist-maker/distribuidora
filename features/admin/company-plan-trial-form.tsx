@@ -74,13 +74,13 @@ export function CompanyTrialForm({ companyId, trialEndsAt, trialBehavior }: { co
   return (
     <div className="flex flex-wrap items-end gap-2">
       <div className="space-y-1.5">
-        <Label className="text-zinc-400">Fim do trial</Label>
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="border-zinc-700 bg-zinc-900 text-zinc-100" />
+        <Label>Fim do trial</Label>
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </div>
       <div className="space-y-1.5">
-        <Label className="text-zinc-400">Após expirar</Label>
+        <Label>Após expirar</Label>
         <Select value={behavior} onValueChange={setBehavior}>
-          <SelectTrigger className="w-48 border-zinc-700 bg-zinc-900 text-zinc-100">
+          <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

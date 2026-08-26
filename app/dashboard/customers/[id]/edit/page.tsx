@@ -3,6 +3,7 @@ import { getCurrentTenant, NotFoundError } from "@/lib/tenant/tenant-context";
 import { getCustomerOrThrow } from "@/features/customers/queries";
 import { CustomerForm } from "@/features/customers/customer-form";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/page-header";
 
 export default async function EditCustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,7 +19,7 @@ export default async function EditCustomerPage({ params }: { params: Promise<{ i
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-xl font-bold">Editar cliente</h1>
+      <PageHeader title="Editar cliente" />
       <Card>
         <CardContent className="pt-5">
           <CustomerForm

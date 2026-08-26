@@ -2,6 +2,7 @@ import { getCurrentTenant } from "@/lib/tenant/tenant-context";
 import { listActiveSuppliers } from "@/features/purchases/queries";
 import { PurchaseForm } from "@/features/purchases/purchase-form";
 import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
 import { Building2 } from "lucide-react";
 
 export default async function NewPurchasePage({ searchParams }: { searchParams: Promise<{ productId?: string }> }) {
@@ -11,7 +12,7 @@ export default async function NewPurchasePage({ searchParams }: { searchParams: 
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Nova compra</h1>
+      <PageHeader title="Nova compra" description="Registre a entrada de mercadorias e atualize o estoque" />
       {suppliers.length === 0 ? (
         <EmptyState
           icon={Building2}
