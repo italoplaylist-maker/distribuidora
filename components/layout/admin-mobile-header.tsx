@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LogOut, Settings, ShieldCheck } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { ADMIN_NAV, isAdminNavActive } from "@/components/layout/admin-sidebar";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function AdminMobileHeader() {
   const pathname = usePathname();
@@ -14,7 +15,7 @@ export function AdminMobileHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border/70 bg-card/90 px-4 backdrop-blur-lg lg:hidden">
       <div className="flex items-center gap-2">
-        <ShieldCheck className="size-[18px] text-primary" />
+        <BrandLogo size={24} className="rounded-md" />
         <span className="text-[15px] font-semibold">{label}</span>
       </div>
       <div className="flex items-center gap-1">

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Building2, Package, CreditCard, ScrollText, LogOut, ShieldCheck, Settings } from "lucide-react";
+import { LayoutDashboard, Building2, Package, CreditCard, ScrollText, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/brand-logo";
 
 export const ADMIN_NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -24,9 +25,7 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/70 bg-card lg:flex">
       <div className="flex h-16 items-center gap-2.5 border-b border-border/70 px-4">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/15">
-          <ShieldCheck className="size-5 text-primary" />
-        </div>
+        <BrandLogo size={36} className="rounded-md" />
         <div className="min-w-0">
           <p className="truncate text-[13.5px] font-semibold leading-tight">Super Admin</p>
           <p className="truncate text-[11.5px] text-muted-foreground">Plataforma SaaS</p>
