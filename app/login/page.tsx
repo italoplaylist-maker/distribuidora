@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarChart3, Boxes, ShieldCheck } from "lucide-react";
 import { LoginForm } from "@/features/auth/login-form";
+import { BrandLogo } from "@/components/brand-logo";
 
 const HIGHLIGHTS = [
   { icon: Boxes, text: "Estoque e vendas em tempo real" },
@@ -16,8 +17,11 @@ export default function LoginPage() {
           className="pointer-events-none absolute -left-24 -top-24 size-[420px] rounded-full opacity-30 blur-3xl"
           style={{ background: "radial-gradient(circle, #EF3035 0%, transparent 70%)" }}
         />
-        <Link href="/" className="relative text-lg font-bold tracking-tight">
-          Distribuidora<span className="text-primary">SaaS</span>
+        <Link href="/" className="relative flex items-center gap-2.5">
+          <BrandLogo size={38} />
+          <span className="text-lg font-bold tracking-tight">
+            Distribuidora<span className="text-primary">SaaS</span>
+          </span>
         </Link>
 
         <div className="relative max-w-md space-y-8">
@@ -40,8 +44,11 @@ export default function LoginPage() {
       </div>
 
       <div className="flex flex-col items-center justify-center gap-8 bg-background px-6 py-16">
-        <Link href="/" className="text-lg font-bold tracking-tight lg:hidden">
-          Distribuidora<span className="text-primary">SaaS</span>
+        <Link href="/" className="flex items-center gap-2.5 lg:hidden">
+          <BrandLogo size={38} />
+          <span className="text-lg font-bold tracking-tight">
+            Distribuidora<span className="text-primary">SaaS</span>
+          </span>
         </Link>
 
         <div className="w-full max-w-sm space-y-7">
