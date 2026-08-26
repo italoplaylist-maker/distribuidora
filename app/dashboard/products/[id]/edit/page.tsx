@@ -40,6 +40,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
               stock: product.stock.toNumber(),
               minStock: product.minStock.toNumber(),
               maxStock: product.maxStock.toNumber(),
+              photoUrl: product.photoUrl ?? undefined,
               active: product.active,
             }}
           />

@@ -12,6 +12,7 @@ export const productSchema = z.object({
   stock: z.coerce.number().min(0).default(0),
   minStock: z.coerce.number().min(0).default(0),
   maxStock: z.coerce.number().min(0).default(0),
+  photoUrl: z.string().max(2_000_000, "Imagem muito grande").optional().nullable(),
   active: z.boolean().default(true),
 });
 export type ProductInput = z.infer<typeof productSchema>;
