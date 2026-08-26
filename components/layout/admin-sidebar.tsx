@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Building2, Package, CreditCard, ScrollText, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Building2, Package, CreditCard, ScrollText, LogOut, ShieldCheck, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const ADMIN_NAV = [
@@ -54,8 +54,17 @@ export function AdminSidebar({ adminName }: { adminName: string }) {
         })}
       </nav>
 
-      <div className="border-t border-border/70 p-3">
+      <div className="space-y-0.5 border-t border-border/70 p-3">
         <p className="truncate px-3 py-1 text-[12.5px] text-muted-foreground">{adminName}</p>
+        <Link
+          href="/admin/settings"
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2.5 text-[13.5px] font-medium transition-colors",
+            isAdminNavActive(pathname, "/admin/settings") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <Settings className="size-[18px]" /> Minha conta
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/admin/login" })}
           className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[13.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"

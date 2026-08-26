@@ -57,6 +57,7 @@ export async function createProductAction(input: unknown): Promise<ActionResult>
       stock: data.stock,
       minStock: data.minStock,
       maxStock: data.maxStock,
+      photoUrl: data.photoUrl || null,
       active: data.active,
     },
   });
@@ -115,6 +116,7 @@ export async function updateProductAction(productId: string, input: unknown): Pr
       price: data.price,
       minStock: data.minStock,
       maxStock: data.maxStock,
+      photoUrl: data.photoUrl || null,
       active: data.active,
     },
   });

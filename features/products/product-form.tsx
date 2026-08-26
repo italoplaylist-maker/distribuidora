@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { PhotoUpload } from "@/components/photo-upload";
 import { productSchema, type ProductInput } from "@/schemas/product";
 import { createProductAction, updateProductAction } from "@/features/products/actions";
 
@@ -45,6 +46,7 @@ export function ProductForm({
       stock: 0,
       minStock: 0,
       maxStock: 0,
+      photoUrl: null,
       active: true,
     },
   });
@@ -64,6 +66,11 @@ export function ProductForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div className="space-y-1.5">
+        <Label>Foto do produto</Label>
+        <PhotoUpload value={watch("photoUrl")} onChange={(dataUrl) => setValue("photoUrl", dataUrl)} />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5 sm:col-span-2">
           <Label>Nome do produto</Label>

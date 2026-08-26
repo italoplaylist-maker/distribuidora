@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { listCompaniesAdmin } from "@/features/admin/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { companyStatus } from "@/lib/status";
@@ -15,7 +16,17 @@ export default async function AdminCompaniesPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Empresas" description={`${companies.length} empresas cadastradas na plataforma`} />
+      <PageHeader
+        title="Empresas"
+        description={`${companies.length} empresas cadastradas na plataforma`}
+        action={
+          <Button asChild>
+            <Link href="/admin/companies/new">
+              <Plus className="size-4" /> Nova empresa
+            </Link>
+          </Button>
+        }
+      />
 
       <form className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

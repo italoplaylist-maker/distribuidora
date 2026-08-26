@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { IMPERSONATION_COOKIE_NAME, decryptImpersonationToken } from "@/lib/auth/impersonation-token";
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -27,6 +28,13 @@ export default auth((req) => {
   }
 
   if (isDashboardRoute && session.user.userType !== "COMPANY_USER") {
+    if (session.user.userType === "SUPER_ADMIN") {
+      const token = req.cookies.get(IMPERSONATION_COOKIE_NAME)?.value;
+      const impersonation = token ? decryptImpersonationToken(token) : null;
+      if (impersonation && impersonation.adminId === session.user.id) {
+        return NextResponse.next();
+      }
+    }
     return NextResponse.redirect(new URL("/admin", req.url));
   }
 
