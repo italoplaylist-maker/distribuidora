@@ -1,21 +1,25 @@
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { getCurrentTenant } from "@/lib/tenant/tenant-context";
-import { getSalesReport, getStockReport, getFinanceReport, getPurchasesReport } from "@/features/reports/queries";
+import { getSalesReport, getStockReport, getFinanceReport, getPurchasesReport, getProfitabilityAnalysis, type ProfitabilityPeriod } from "@/features/reports/queries";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { PageHeader } from "@/components/page-header";
 import { PAYMENT_METHOD_LABELS } from "@/lib/status";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
+import { ProfitabilityChart } from "@/components/reports/profitability-chart";
+import { CsvExportButton } from "@/components/csv-export-button";
 
 const TRANSACTION_LABELS: Record<string, string> = { PAYMENT: "Pagamentos", RECEIPT: "Recebimentos", EXPENSE: "Despesas", REVENUE: "Receitas" };
 
 export default async function ReportsPage() {
   const tenant = await getCurrentTenant();
-  const [sales, stock, finance, purchases] = await Promise.all([
+  const [sales, stock, finance, purchases, profitability] = await Promise.all([
     getSalesReport(tenant.companyId),
     getStockReport(tenant.companyId),
     getFinanceReport(tenant.companyId),
     getPurchasesReport(tenant.companyId),
+    getProfitabilityAnalysis(tenant.companyId),
   ]);
 
   return (
@@ -28,9 +32,17 @@ export default async function ReportsPage() {
           <TabsTrigger value="stock">Estoque</TabsTrigger>
           <TabsTrigger value="finance">Financeiro</TabsTrigger>
           <TabsTrigger value="purchases">Compras</TabsTrigger>
+          <TabsTrigger value="profitability">Rentabilidade</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales" className="space-y-4">
+          <div className="flex justify-end">
+            <CsvExportButton
+              filename="produtos-mais-vendidos.csv"
+              headers={["Produto", "Quantidade", "Total"]}
+              rows={sales.topProducts.map((p) => [p.name, p.quantity, p.total])}
+            />
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <StatCard label="Faturamento total" value={formatCurrency(sales.totalRevenue)} />
             <StatCard label="Total de vendas" value={sales.totalSales} />
@@ -89,6 +101,13 @@ export default async function ReportsPage() {
         </TabsContent>
 
         <TabsContent value="stock" className="space-y-4">
+          <div className="flex justify-end">
+            <CsvExportButton
+              filename="estoque.csv"
+              headers={["Produto", "SKU", "Estoque", "Unidade", "Custo médio", "Preço", "Valor investido", "Valor potencial", "Margem (%)"]}
+              rows={stock.exportRows.map((r) => [r.nome, r.sku, r.estoque, r.unidade, r.custoMedio, r.preco, r.valorInvestido, r.valorPotencial, r.margem !== null ? r.margem.toFixed(1) : null])}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
             <StatCard label="Valor investido" value={formatCurrency(stock.totalValue)} />
             <StatCard label="Valor potencial de venda" value={formatCurrency(stock.totalPotential)} />
@@ -217,6 +236,13 @@ export default async function ReportsPage() {
         </TabsContent>
 
         <TabsContent value="purchases" className="space-y-4">
+          <div className="flex justify-end">
+            <CsvExportButton
+              filename="compras-por-fornecedor.csv"
+              headers={["Fornecedor", "Compras", "Total"]}
+              rows={purchases.bySupplier.map((s) => [s.name, s.count, s.total])}
+            />
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <StatCard label="Total gasto em compras" value={formatCurrency(purchases.totalSpent)} />
             <StatCard label="Total de compras" value={purchases.totalPurchases} />
@@ -245,8 +271,88 @@ export default async function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="profitability" className="space-y-4">
+          <div className="flex justify-end">
+            <CsvExportButton
+              filename="rentabilidade-mensal.csv"
+              headers={["Mês", "Faturamento", "Custo", "Lucro bruto"]}
+              rows={profitability.monthlyEvolution.map((m) => [m.label, m.faturamento, m.custo, m.lucroBruto])}
+            />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ComparisonCard title="Mês atual vs. mês anterior" current={profitability.currentMonth} previous={profitability.previousMonth} variation={profitability.monthVariation} />
+            <ComparisonCard title="Ano atual vs. mesmo período do ano anterior" current={profitability.currentYear} previous={profitability.previousYearToDate} variation={profitability.yearVariation} />
+          </div>
+          <Card>
+            <CardContent className="pt-6">
+              <p className="mb-3 text-[14px] font-semibold">Evolução mensal (6 meses)</p>
+              <ProfitabilityChart data={profitability.monthlyEvolution} />
+            </CardContent>
+          </Card>
+          <p className="text-[12.5px] text-muted-foreground">
+            O custo considera o custo médio atual de cada produto (o sistema não guarda custo histórico por lote). Este relatório mostra lucro bruto — o
+            sistema ainda não rastreia despesas operacionais (aluguel, salários etc.) separadas do custo de mercadoria, então lucro líquido não é exibido
+            para não inventar um número sem essa base de dados.
+          </p>
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function ComparisonCard({
+  title,
+  current,
+  previous,
+  variation,
+}: {
+  title: string;
+  current: ProfitabilityPeriod;
+  previous: ProfitabilityPeriod;
+  variation: { faturamento: number | null; lucroBruto: number | null };
+}) {
+  return (
+    <Card>
+      <CardContent className="space-y-4 pt-6">
+        <p className="text-[14px] font-semibold">{title}</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-[12px] text-muted-foreground">Faturamento</p>
+            <p className="text-[19px] font-semibold">{formatCurrency(current.faturamento)}</p>
+            <VariationBadge value={variation.faturamento} />
+          </div>
+          <div>
+            <p className="text-[12px] text-muted-foreground">Lucro bruto</p>
+            <p className={cn("text-[19px] font-semibold", current.lucroBruto < 0 && "text-destructive")}>{formatCurrency(current.lucroBruto)}</p>
+            <VariationBadge value={variation.lucroBruto} />
+          </div>
+          <div>
+            <p className="text-[12px] text-muted-foreground">Custo</p>
+            <p className="text-[15px] font-medium text-muted-foreground">{formatCurrency(current.custo)}</p>
+          </div>
+          <div>
+            <p className="text-[12px] text-muted-foreground">Margem bruta</p>
+            <p className="text-[15px] font-medium">{current.margem !== null ? `${current.margem.toFixed(1)}%` : "—"}</p>
+          </div>
+        </div>
+        <p className="border-t border-border/60 pt-3 text-[12px] text-muted-foreground">
+          Período anterior: {formatCurrency(previous.faturamento)} faturados, {formatCurrency(previous.lucroBruto)} de lucro bruto.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function VariationBadge({ value }: { value: number | null }) {
+  if (value === null) return <p className="text-[12px] text-muted-foreground">Sem comparativo</p>;
+  const up = value >= 0;
+  return (
+    <p className={cn("flex items-center gap-1 text-[12px] font-medium", up ? "text-success" : "text-destructive")}>
+      {up ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+      {up ? "+" : ""}
+      {value.toFixed(1)}%
+    </p>
   );
 }
 

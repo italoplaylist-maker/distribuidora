@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/database/prisma";
+import { isRateLimited, recordFailedAttempt, clearAttempts } from "@/lib/auth/rate-limit";
 import type { CompanyRole } from "@prisma/client";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -17,27 +18,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Senha", type: "password" },
       },
-      authorize: async (credentials) => {
+      authorize: async (credentials, request) => {
         const email = credentials?.email;
         const password = credentials?.password;
         if (!email || !password || typeof email !== "string" || typeof password !== "string") {
           return null;
         }
 
+        const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+        if (isRateLimited(ip)) return null;
+
         const user = await prisma.user.findFirst({
           where: { email: email.toLowerCase().trim(), active: true },
           include: { company: true },
         });
 
-        if (!user) return null;
+        if (!user) {
+          recordFailedAttempt(ip);
+          return null;
+        }
 
         const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+        if (!valid) {
+          recordFailedAttempt(ip);
+          return null;
+        }
 
         if (user.userType === "COMPANY_USER" && user.company?.deletedAt) {
           return null;
         }
 
+        clearAttempts(ip);
         await prisma.user.update({
           where: { id: user.id },
           data: { lastLoginAt: new Date() },

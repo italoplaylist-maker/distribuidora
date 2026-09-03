@@ -96,6 +96,23 @@ export async function getStockReport(companyId: string) {
     staleCount: products.filter((p) => Number(p.stock) > 0 && !soldIds.has(p.id)).length,
     topMargin: [...withMargin].sort((a, b) => b.margin - a.margin).slice(0, 10),
     bottomMargin: [...withMargin].sort((a, b) => a.margin - b.margin).slice(0, 10),
+    // Full list for CSV export — `products` is already fully loaded above, so this is free (no extra query).
+    exportRows: products.map((p) => {
+      const stock = Number(p.stock);
+      const cost = Number(p.averageCost);
+      const price = Number(p.price);
+      return {
+        nome: p.name,
+        sku: p.sku ?? "",
+        estoque: stock,
+        unidade: p.unit,
+        custoMedio: cost,
+        preco: price,
+        valorInvestido: stock * cost,
+        valorPotencial: stock * price,
+        margem: price > 0 ? ((price - cost) / price) * 100 : null,
+      };
+    }),
   };
 }
 
@@ -125,6 +142,122 @@ export async function getFinanceReport(companyId: string) {
     payablesOpen: Number(payablesAgg._sum.amount ?? 0) - Number(payablesAgg._sum.paidAmount ?? 0),
     overdueReceivablesCount: overdueReceivables,
     byType: transactionsByType.map((t) => ({ type: t.type, total: Number(t._sum.amount ?? 0) })),
+  };
+}
+
+export interface ProfitabilityPeriod {
+  faturamento: number;
+  custo: number;
+  lucroBruto: number;
+  margem: number | null;
+  vendas: number;
+}
+
+function emptyProfitabilityPeriod(): ProfitabilityPeriod {
+  return { faturamento: 0, custo: 0, lucroBruto: 0, margem: null, vendas: 0 };
+}
+
+function monthKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/**
+ * Faturamento/custo por mês, agregados no banco (não carrega vendas linha a
+ * linha em JS) para escalar independente do volume histórico de vendas.
+ * Custo usa o averageCost *atual* do produto — mesma simplificação já usada
+ * no dashboard, já que o sistema não guarda custo histórico por lote.
+ */
+export async function getProfitabilityAnalysis(companyId: string) {
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const previousYearStart = new Date(now.getFullYear() - 1, 0, 1);
+
+  const [revenueRows, costRows] = await Promise.all([
+    prisma.$queryRawUnsafe<{ month: Date; faturamento: number; count: bigint }[]>(
+      `SELECT date_trunc('month', "createdAt")::date as month, sum("totalAmount")::float as faturamento, count(*)::bigint as count
+       FROM sales WHERE "companyId" = $1 AND status = 'COMPLETED' AND "createdAt" >= $2
+       GROUP BY 1 ORDER BY 1`,
+      companyId,
+      previousYearStart,
+    ),
+    prisma.$queryRawUnsafe<{ month: Date; custo: number }[]>(
+      `SELECT date_trunc('month', s."createdAt")::date as month, sum(si.quantity * p."averageCost")::float as custo
+       FROM sale_items si
+       JOIN sales s ON s.id = si."saleId"
+       JOIN products p ON p.id = si."productId"
+       WHERE s."companyId" = $1 AND s.status = 'COMPLETED' AND s."createdAt" >= $2
+       GROUP BY 1 ORDER BY 1`,
+      companyId,
+      previousYearStart,
+    ),
+  ]);
+
+  const monthMap = new Map<string, ProfitabilityPeriod>();
+  for (const r of revenueRows) {
+    const key = monthKey(new Date(r.month));
+    const p = monthMap.get(key) ?? emptyProfitabilityPeriod();
+    p.faturamento += Number(r.faturamento ?? 0);
+    p.vendas += Number(r.count ?? 0);
+    monthMap.set(key, p);
+  }
+  for (const r of costRows) {
+    const key = monthKey(new Date(r.month));
+    const p = monthMap.get(key) ?? emptyProfitabilityPeriod();
+    p.custo += Number(r.custo ?? 0);
+    monthMap.set(key, p);
+  }
+  for (const p of monthMap.values()) {
+    p.lucroBruto = p.faturamento - p.custo;
+    p.margem = p.faturamento > 0 ? (p.lucroBruto / p.faturamento) * 100 : null;
+  }
+
+  function sumRange(startKey: string, endKeyExclusive: string): ProfitabilityPeriod {
+    const period = emptyProfitabilityPeriod();
+    for (const [key, p] of monthMap.entries()) {
+      if (key >= startKey && key < endKeyExclusive) {
+        period.faturamento += p.faturamento;
+        period.custo += p.custo;
+        period.vendas += p.vendas;
+      }
+    }
+    period.lucroBruto = period.faturamento - period.custo;
+    period.margem = period.faturamento > 0 ? (period.lucroBruto / period.faturamento) * 100 : null;
+    return period;
+  }
+
+  const previousMonthDate = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() - 1, 1);
+  const currentMonth = monthMap.get(monthKey(currentMonthStart)) ?? emptyProfitabilityPeriod();
+  const previousMonth = monthMap.get(monthKey(previousMonthDate)) ?? emptyProfitabilityPeriod();
+
+  // Year-over-year compares the same number of elapsed months, not full calendar years.
+  const monthsElapsed = now.getMonth() + 1;
+  const currentYear = sumRange(monthKey(new Date(now.getFullYear(), 0, 1)), monthKey(new Date(now.getFullYear(), monthsElapsed, 1)));
+  const previousYearToDate = sumRange(monthKey(new Date(now.getFullYear() - 1, 0, 1)), monthKey(new Date(now.getFullYear() - 1, monthsElapsed, 1)));
+
+  function variation(curr: number, prev: number): number | null {
+    return prev > 0 ? ((curr - prev) / prev) * 100 : null;
+  }
+
+  const monthlyEvolution = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() - (5 - i), 1);
+    const p = monthMap.get(monthKey(d)) ?? emptyProfitabilityPeriod();
+    return { label: d.toLocaleDateString("pt-BR", { month: "short" }), faturamento: p.faturamento, custo: p.custo, lucroBruto: p.lucroBruto };
+  });
+
+  return {
+    currentMonth,
+    previousMonth,
+    monthVariation: {
+      faturamento: variation(currentMonth.faturamento, previousMonth.faturamento),
+      lucroBruto: variation(currentMonth.lucroBruto, previousMonth.lucroBruto),
+    },
+    currentYear,
+    previousYearToDate,
+    yearVariation: {
+      faturamento: variation(currentYear.faturamento, previousYearToDate.faturamento),
+      lucroBruto: variation(currentYear.lucroBruto, previousYearToDate.lucroBruto),
+    },
+    monthlyEvolution,
   };
 }
 
