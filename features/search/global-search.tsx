@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Package, Users, Building2, Loader2 } from "lucide-react";
+import { Search, Package, Users, Building2, Loader2, Receipt } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { globalSearch, type SearchResultItem } from "@/features/search/actions";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ const GROUP_ICON: Record<string, typeof Package> = {
   Produtos: Package,
   Clientes: Users,
   Fornecedores: Building2,
+  Vendas: Receipt,
 };
 
 export function GlobalSearch({ variant = "input" }: { variant?: "input" | "icon" }) {
