@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { stockLevelStatus } from "@/lib/status";
 import { formatCurrency } from "@/lib/utils";
 import { ProductsSearch } from "@/features/products/products-search";
+import { Pagination } from "@/components/pagination";
 
 const FILTER_MAP: Record<string, "low" | "zero" | "recent" | undefined> = {
   "low-stock": "low",
@@ -21,17 +22,27 @@ const FILTER_MAP: Record<string, "low" | "zero" | "recent" | undefined> = {
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; filter?: string }>;
+  searchParams: Promise<{ q?: string; filter?: string; page?: string }>;
 }) {
-  const { q, filter } = await searchParams;
+  const { q, filter, page } = await searchParams;
   const tenant = await getCurrentTenant();
-  const products = await listProducts(tenant.companyId, { search: q, stockFilter: filter ? FILTER_MAP[filter] : undefined });
+  const currentPage = Math.max(1, Number(page) || 1);
+  const result = await listProducts(tenant.companyId, { search: q, stockFilter: filter ? FILTER_MAP[filter] : undefined }, currentPage);
+  const products = result.items;
+
+  function pageHref(p: number) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (filter) params.set("filter", filter);
+    params.set("page", String(p));
+    return `/dashboard/products?${params.toString()}`;
+  }
 
   return (
     <div className="space-y-5">
       <PageHeader
         title="Produtos"
-        description={`${products.length} produtos cadastrados`}
+        description={`${result.total} produto${result.total === 1 ? "" : "s"} cadastrado${result.total === 1 ? "" : "s"}`}
         action={
           <Button asChild>
             <Link href="/dashboard/products/new">
@@ -106,6 +117,8 @@ export default async function ProductsPage({
               </TableBody>
             </Table>
           </div>
+
+          <Pagination page={result.page} totalPages={result.totalPages} hrefFor={pageHref} />
         </>
       )}
     </div>

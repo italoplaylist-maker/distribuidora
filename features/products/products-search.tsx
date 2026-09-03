@@ -30,6 +30,7 @@ export function ProductsSearch({ defaultValue, activeFilter }: { defaultValue?: 
       if (next.filter) params.set("filter", next.filter);
       else params.delete("filter");
     }
+    params.delete("page");
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   }
 

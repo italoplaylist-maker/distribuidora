@@ -7,13 +7,15 @@ import { RankingList } from "@/components/ranking-list";
 import { ActivityTimeline, type ActivityItem } from "@/components/activity-timeline";
 import { EmptyState } from "@/components/empty-state";
 import { SalesChartCard } from "@/features/dashboard/sales-chart-card";
+import { AlertsCard } from "@/components/alerts-card";
+import { InsightsCard } from "@/components/insights-card";
+import { buildAlerts, buildInsights } from "@/features/dashboard/insights";
 import { formatCurrency } from "@/lib/utils";
 import {
   Receipt,
   TrendingUp,
   Wallet,
   ArrowDownCircle,
-  ArrowUpCircle,
   AlertTriangle,
   PlusCircle,
   PackagePlus,
@@ -21,6 +23,9 @@ import {
   ShoppingBag,
   Boxes,
   ShoppingCart,
+  Percent,
+  Tag,
+  Sparkles,
 } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -28,6 +33,8 @@ export default async function DashboardPage() {
   const data = await getDashboardData(tenant.companyId);
   const firstName = tenant.userName.split(" ")[0];
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+  const alerts = buildAlerts(data);
+  const insights = buildInsights(data);
 
   const quickActions = [
     { label: "Nova venda", hint: "PDV", href: "/dashboard/sales/new", icon: <PlusCircle /> },
@@ -98,7 +105,7 @@ export default async function DashboardPage() {
           value={formatCurrency(data.estoqueValor)}
           icon={<Boxes />}
           accent="neutral"
-          hint={`${data.estoqueProdutosCount} produtos`}
+          hint={`Potencial: ${formatCurrency(data.estoquePotencial)}`}
           href="/dashboard/products"
         />
         <MetricCard
@@ -130,15 +137,34 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {data.contasPagar > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-warning/25 bg-warning/8 p-3.5 text-[13.5px] text-warning">
-          <ArrowUpCircle className="size-4 shrink-0" />
-          Você tem {formatCurrency(data.contasPagar)} em contas a pagar em aberto.
-          <a href="/dashboard/finance/payables" className="ml-auto shrink-0 font-medium underline underline-offset-2">
-            Ver contas
-          </a>
+      <div>
+        <p className="mb-3 px-0.5 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground/70">Resultado dos últimos 30 dias</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MetricCard index={0} label="Faturamento" value={formatCurrency(data.faturamentoMes)} icon={<TrendingUp />} accent="primary" />
+          <MetricCard
+            index={1}
+            label="Lucro bruto"
+            value={formatCurrency(data.lucroMes)}
+            icon={<Tag />}
+            accent={data.lucroMes >= 0 ? "success" : "destructive"}
+          />
+          <MetricCard
+            index={2}
+            label="Margem média"
+            value={data.margemMedia !== null ? `${data.margemMedia.toFixed(1)}%` : "—"}
+            icon={<Percent />}
+            accent="neutral"
+          />
+          <MetricCard index={3} label="Ticket médio" value={formatCurrency(data.ticketMedio)} icon={<Receipt />} accent="neutral" />
         </div>
-      )}
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <p className="mb-3 font-semibold tracking-[-0.01em]">Alertas</p>
+          <AlertsCard alerts={alerts} />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="space-y-5">
@@ -157,6 +183,15 @@ export default async function DashboardPage() {
         </div>
 
         <div className="space-y-5">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="mb-3 flex items-center gap-2 font-semibold tracking-[-0.01em]">
+                <Sparkles className="size-4 text-primary" /> Insights
+              </p>
+              <InsightsCard insights={insights} />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="pt-6">
               <div className="mb-1 flex items-center justify-between">

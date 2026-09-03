@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { PhotoUpload } from "@/components/photo-upload";
+import { PricingHelper } from "@/features/products/pricing-helper";
 import { productSchema, type ProductInput } from "@/schemas/product";
 import { createProductAction, updateProductAction } from "@/features/products/actions";
 
@@ -127,6 +128,9 @@ export function ProductForm({
           <Label>Preço de venda</Label>
           <Input type="number" step="0.01" {...register("price")} />
           {errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
+        </div>
+        <div className="sm:col-span-2">
+          <PricingHelper cost={Number(watch("cost")) || 0} price={Number(watch("price")) || 0} onApplyPrice={(p) => setValue("price", p)} />
         </div>
         {!product && (
           <div className="space-y-1.5">

@@ -51,19 +51,51 @@ export async function getSalesReport(companyId: string) {
 }
 
 export async function getStockReport(companyId: string) {
-  const products = await prisma.product.findMany({ where: { companyId, active: true } });
+  const [products, sold30Days] = await Promise.all([
+    prisma.product.findMany({ where: { companyId, active: true } }),
+    prisma.stockMovement.groupBy({
+      by: ["productId"],
+      where: { companyId, type: "VENDA", createdAt: { gte: new Date(Date.now() - 30 * 86400000) } },
+      _sum: { quantity: true },
+    }),
+  ]);
 
   const totalValue = products.reduce((sum, p) => sum + Number(p.stock) * Number(p.averageCost), 0);
+  const totalPotential = products.reduce((sum, p) => sum + Number(p.stock) * Number(p.price), 0);
   const lowStock = products.filter((p) => Number(p.stock) <= Number(p.minStock) && Number(p.stock) > 0);
   const zeroStock = products.filter((p) => Number(p.stock) <= 0);
+
+  const soldQtyByProduct = new Map(sold30Days.map((s) => [s.productId, Math.abs(Number(s._sum.quantity ?? 0))]));
+  const soldIds = new Set(soldQtyByProduct.keys());
+
+  const withMargin = products
+    .filter((p) => Number(p.price) > 0)
+    .map((p) => ({ name: p.name, margin: ((Number(p.price) - Number(p.averageCost)) / Number(p.price)) * 100 }));
+
+  const topTurnover = [...soldQtyByProduct.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([productId, qty]) => ({ name: products.find((p) => p.id === productId)?.name ?? "-", quantity: qty }));
+
+  const staleProducts = products
+    .filter((p) => Number(p.stock) > 0 && !soldIds.has(p.id))
+    .slice(0, 15)
+    .map((p) => ({ name: p.name, stock: p.stock.toString(), unit: p.unit }));
 
   return {
     totalProducts: products.length,
     totalValue,
+    totalPotential,
+    potentialProfit: totalPotential - totalValue,
     lowStockCount: lowStock.length,
     zeroStockCount: zeroStock.length,
     lowStockProducts: lowStock.slice(0, 15).map((p) => ({ name: p.name, stock: p.stock.toString(), minStock: p.minStock.toString() })),
     zeroStockProducts: zeroStock.slice(0, 15).map((p) => ({ name: p.name })),
+    topTurnover,
+    staleProducts,
+    staleCount: products.filter((p) => Number(p.stock) > 0 && !soldIds.has(p.id)).length,
+    topMargin: [...withMargin].sort((a, b) => b.margin - a.margin).slice(0, 10),
+    bottomMargin: [...withMargin].sort((a, b) => a.margin - b.margin).slice(0, 10),
   };
 }
 

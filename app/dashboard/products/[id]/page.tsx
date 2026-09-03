@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil, Receipt, PackagePlus, History, SlidersHorizontal, Package } from "lucide-react";
 import { getCurrentTenant, NotFoundError } from "@/lib/tenant/tenant-context";
-import { getProductOrThrow, getProductStockHistory } from "@/features/products/queries";
+import { getProductOrThrow, getProductStockHistory, getProductAnalytics } from "@/features/products/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
@@ -22,10 +22,19 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     throw err;
   }
 
-  const movements = await getProductStockHistory(tenant.companyId, id);
+  const [movements, analytics] = await Promise.all([
+    getProductStockHistory(tenant.companyId, id),
+    getProductAnalytics(tenant.companyId, id),
+  ]);
   const status = stockLevelStatus(Number(product.stock), Number(product.minStock));
   const unitsSold = movements.filter((m) => m.type === "VENDA").reduce((sum, m) => sum + Math.abs(Number(m.quantity)), 0);
   const margin = product.price.toNumber() > 0 ? ((product.price.toNumber() - product.averageCost.toNumber()) / product.price.toNumber()) * 100 : null;
+
+  const stockNum = product.stock.toNumber();
+  const valorInvestido = stockNum * product.averageCost.toNumber();
+  const valorPotencial = stockNum * product.price.toNumber();
+  const lucroPotencial = valorPotencial - valorInvestido;
+  const lucroGerado = analytics.revenueTotal - analytics.unitsSoldTotal * product.averageCost.toNumber();
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -83,6 +92,20 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         <Stat label="Unidades vendidas" value={unitsSold.toString()} />
       </div>
 
+      <Card>
+        <CardContent className="pt-6">
+          <p className="mb-3 text-[14px] font-semibold">Inteligência do produto</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Stat label="Valor investido" value={formatCurrency(valorInvestido)} />
+            <Stat label="Valor potencial de venda" value={formatCurrency(valorPotencial)} />
+            <Stat label="Lucro potencial (estoque)" value={formatCurrency(lucroPotencial)} tone={lucroPotencial >= 0 ? undefined : "destructive"} />
+            <Stat label="Faturamento gerado (total)" value={formatCurrency(analytics.revenueTotal)} />
+            <Stat label="Lucro gerado (total)" value={formatCurrency(lucroGerado)} tone={lucroGerado >= 0 ? undefined : "destructive"} />
+            <Stat label="Vendas (30 dias)" value={`${analytics.unitsSoldLast30} ${product.unit} · ${formatCurrency(analytics.revenueLast30)}`} />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card id="historico">
         <CardContent className="pt-6">
           <p className="mb-3 font-semibold tracking-[-0.01em]">Histórico de movimentações</p>
@@ -124,12 +147,12 @@ function QuickAction({ href, icon, label }: { href: string; icon: React.ReactNod
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, tone }: { label: string; value: string; tone?: "destructive" }) {
   return (
     <Card>
       <CardContent className="pt-5">
         <p className="text-[12px] text-muted-foreground">{label}</p>
-        <p className="text-[17px] font-semibold tracking-[-0.01em]">{value}</p>
+        <p className={`text-[17px] font-semibold tracking-[-0.01em] ${tone === "destructive" ? "text-destructive" : ""}`}>{value}</p>
       </CardContent>
     </Card>
   );

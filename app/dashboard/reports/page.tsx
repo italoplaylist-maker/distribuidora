@@ -90,10 +90,77 @@ export default async function ReportsPage() {
 
         <TabsContent value="stock" className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            <StatCard label="Valor investido" value={formatCurrency(stock.totalValue)} />
+            <StatCard label="Valor potencial de venda" value={formatCurrency(stock.totalPotential)} />
+            <StatCard label="Lucro potencial" value={formatCurrency(stock.potentialProfit)} accent={stock.potentialProfit >= 0 ? undefined : "destructive"} />
+            <StatCard label="Produtos parados" value={stock.staleCount} accent={stock.staleCount > 0 ? "warning" : undefined} />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
             <StatCard label="Produtos ativos" value={stock.totalProducts} />
-            <StatCard label="Valor em estoque" value={formatCurrency(stock.totalValue)} />
             <StatCard label="Estoque baixo" value={stock.lowStockCount} accent="warning" />
             <StatCard label="Zerados" value={stock.zeroStockCount} accent="destructive" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card>
+              <CardContent className="pt-6">
+                <p className="mb-1 text-[14px] font-semibold">Maior giro (30 dias)</p>
+                <div className="divide-y divide-border/60">
+                  {stock.topTurnover.map((p, i) => (
+                    <div key={i} className="flex justify-between py-2.5 text-[13.5px]">
+                      <span>{p.name}</span>
+                      <span className="font-medium">{p.quantity} un.</span>
+                    </div>
+                  ))}
+                  {stock.topTurnover.length === 0 && <p className="py-2.5 text-[13.5px] text-muted-foreground">Nenhuma venda nos últimos 30 dias.</p>}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="mb-1 text-[14px] font-semibold">Produtos parados (sem venda em 30 dias)</p>
+                <div className="divide-y divide-border/60">
+                  {stock.staleProducts.map((p, i) => (
+                    <div key={i} className="flex justify-between py-2.5 text-[13.5px]">
+                      <span>{p.name}</span>
+                      <span className="text-muted-foreground">
+                        {p.stock} {p.unit}
+                      </span>
+                    </div>
+                  ))}
+                  {stock.staleProducts.length === 0 && <p className="py-2.5 text-[13.5px] text-muted-foreground">Nenhum produto parado.</p>}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card>
+              <CardContent className="pt-6">
+                <p className="mb-1 text-[14px] font-semibold">Maior margem</p>
+                <div className="divide-y divide-border/60">
+                  {stock.topMargin.map((p, i) => (
+                    <div key={i} className="flex justify-between py-2.5 text-[13.5px]">
+                      <span>{p.name}</span>
+                      <span className="font-medium text-success">{p.margin.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                  {stock.topMargin.length === 0 && <p className="py-2.5 text-[13.5px] text-muted-foreground">Sem dados suficientes.</p>}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="mb-1 text-[14px] font-semibold">Menor margem</p>
+                <div className="divide-y divide-border/60">
+                  {stock.bottomMargin.map((p, i) => (
+                    <div key={i} className="flex justify-between py-2.5 text-[13.5px]">
+                      <span>{p.name}</span>
+                      <span className={`font-medium ${p.margin < 10 ? "text-destructive" : ""}`}>{p.margin.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                  {stock.bottomMargin.length === 0 && <p className="py-2.5 text-[13.5px] text-muted-foreground">Sem dados suficientes.</p>}
+                </div>
+              </CardContent>
+            </Card>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Card>
