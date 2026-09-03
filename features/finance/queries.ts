@@ -1,20 +1,46 @@
 import "server-only";
 import { prisma } from "@/lib/database/prisma";
 
+const SETTLED_ACCOUNTS_LIMIT = 50;
+
+/**
+ * Open/overdue accounts are returned unbounded — a real business only ever
+ * has a handful to a few hundred outstanding at once. Settled (paid/
+ * canceled) accounts accumulate forever, so that history is capped instead
+ * of loading years of closed accounts on every page view.
+ */
 export async function listReceivables(companyId: string) {
-  return prisma.accountReceivable.findMany({
-    where: { companyId },
-    include: { customer: true },
-    orderBy: { dueDate: "asc" },
-  });
+  const [open, settled] = await Promise.all([
+    prisma.accountReceivable.findMany({
+      where: { companyId, status: { in: ["OPEN", "PARTIALLY_PAID"] } },
+      include: { customer: true },
+      orderBy: { dueDate: "asc" },
+    }),
+    prisma.accountReceivable.findMany({
+      where: { companyId, status: { in: ["PAID", "CANCELED"] } },
+      include: { customer: true },
+      orderBy: { updatedAt: "desc" },
+      take: SETTLED_ACCOUNTS_LIMIT,
+    }),
+  ]);
+  return { open, settled };
 }
 
 export async function listPayables(companyId: string) {
-  return prisma.accountPayable.findMany({
-    where: { companyId },
-    include: { purchase: { include: { supplier: true } } },
-    orderBy: { dueDate: "asc" },
-  });
+  const [open, settled] = await Promise.all([
+    prisma.accountPayable.findMany({
+      where: { companyId, status: { in: ["OPEN", "PARTIALLY_PAID"] } },
+      include: { purchase: { include: { supplier: true } } },
+      orderBy: { dueDate: "asc" },
+    }),
+    prisma.accountPayable.findMany({
+      where: { companyId, status: { in: ["PAID", "CANCELED"] } },
+      include: { purchase: { include: { supplier: true } } },
+      orderBy: { updatedAt: "desc" },
+      take: SETTLED_ACCOUNTS_LIMIT,
+    }),
+  ]);
+  return { open, settled };
 }
 
 export async function getOpenCashRegister(companyId: string) {
