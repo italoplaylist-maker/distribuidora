@@ -15,7 +15,6 @@ export const signupSchema = z.object({
     .transform((v) => v.replace(/\D/g, "")),
   companyEmail: z.string().email("E-mail da empresa inválido"),
   phone: z.string().optional(),
-  planId: z.string().min(1, "Selecione um plano"),
   adminName: z.string().min(2, "Informe seu nome"),
   adminEmail: z.string().email("E-mail inválido"),
   password: z.string().min(6, "A senha deve ter ao menos 6 caracteres"),

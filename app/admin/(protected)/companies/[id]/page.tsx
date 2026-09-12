@@ -3,14 +3,13 @@ import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { getCompanyAdminDetail } from "@/features/admin/queries";
 import { NotFoundError } from "@/lib/tenant/tenant-context";
-import { prisma } from "@/lib/database/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
 import { companyStatus, userStatus } from "@/lib/status";
 import { formatDate } from "@/lib/utils";
 import { CompanyStatusActions } from "@/features/admin/company-status-actions";
-import { CompanyPlanForm, CompanyTrialForm } from "@/features/admin/company-plan-trial-form";
+import { CompanyTrialForm } from "@/features/admin/company-trial-form";
 import { ImpersonateButton } from "@/features/admin/impersonate-button";
 
 export default async function AdminCompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,7 +23,6 @@ export default async function AdminCompanyDetailPage({ params }: { params: Promi
     throw err;
   }
 
-  const plans = await prisma.plan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } });
   const status = companyStatus(company.status);
 
   return (
@@ -52,13 +50,6 @@ export default async function AdminCompanyDetailPage({ params }: { params: Promi
         <CardContent className="space-y-3 pt-6">
           <p className="text-[14px] font-semibold">Ações</p>
           <CompanyStatusActions companyId={company.id} status={company.status} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="space-y-3 pt-6">
-          <p className="text-[14px] font-semibold">Plano</p>
-          <CompanyPlanForm companyId={company.id} planId={company.subscription?.planId} plans={plans.map((p) => ({ id: p.id, name: p.name }))} />
         </CardContent>
       </Card>
 

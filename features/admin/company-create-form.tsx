@@ -14,12 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { createCompanySchema, type CreateCompanyInput } from "@/schemas/admin";
 import { createCompanyAction } from "@/features/admin/actions";
 
-interface PlanOption {
-  id: string;
-  name: string;
-}
-
-export function CompanyCreateForm({ plans }: { plans: PlanOption[] }) {
+export function CompanyCreateForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [created, setCreated] = useState<{ companyId: string; password: string } | null>(null);
@@ -31,7 +26,7 @@ export function CompanyCreateForm({ plans }: { plans: PlanOption[] }) {
     formState: { errors },
   } = useForm<CreateCompanyInput>({
     resolver: zodResolver(createCompanySchema) as Resolver<CreateCompanyInput>,
-    defaultValues: { status: "TRIAL", trialDays: 3, planId: plans[0]?.id ?? "" },
+    defaultValues: { status: "TRIAL", trialDays: 3 },
   });
 
   function onSubmit(data: CreateCompanyInput) {
@@ -103,22 +98,6 @@ export function CompanyCreateForm({ plans }: { plans: PlanOption[] }) {
         <div className="space-y-1.5">
           <Label>Telefone</Label>
           <Input {...register("phone")} placeholder="Opcional" />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Plano</Label>
-          <Select value={watch("planId")} onValueChange={(v) => setValue("planId", v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              {plans.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.planId && <p className="text-xs text-destructive">{errors.planId.message}</p>}
         </div>
         <div className="space-y-1.5">
           <Label>Status inicial</Label>

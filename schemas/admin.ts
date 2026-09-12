@@ -1,21 +1,5 @@
 import { z } from "zod";
 
-export const planSchema = z.object({
-  name: z.string().min(2),
-  slug: z.string().min(2),
-  description: z.string().optional(),
-  priceMonthly: z.coerce.number().min(0),
-  priceYearly: z.coerce.number().min(0),
-  maxUsers: z.coerce.number(),
-  maxProducts: z.coerce.number(),
-  maxCustomers: z.coerce.number(),
-  maxSuppliers: z.coerce.number(),
-  maxStorageMb: z.coerce.number(),
-  features: z.array(z.string()).default([]),
-  active: z.boolean().default(true),
-});
-export type PlanInput = z.infer<typeof planSchema>;
-
 export const deleteCompanySchema = z.object({
   companyId: z.string().min(1),
   password: z.string().min(1, "Confirme sua senha"),
@@ -32,7 +16,6 @@ export const createCompanySchema = z.object({
     .transform((v) => v.replace(/\D/g, "")),
   companyEmail: z.string().email("E-mail da empresa inválido"),
   phone: z.string().optional(),
-  planId: z.string().min(1, "Selecione um plano"),
   status: z.enum(["TRIAL", "ACTIVE"]).default("TRIAL"),
   trialDays: z.coerce.number().min(1).max(90).default(3),
   adminName: z.string().min(2, "Informe o nome do responsável"),

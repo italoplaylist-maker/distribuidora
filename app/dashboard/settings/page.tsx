@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Building2, Users, ScrollText, CreditCard, SlidersHorizontal } from "lucide-react";
+import { Building2, Users, ScrollText, KeyRound, SlidersHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
 
 const ITEMS = [
   { href: "/dashboard/settings/company", label: "Minha empresa", desc: "Dados cadastrais e preferências operacionais", icon: Building2 },
   { href: "/dashboard/settings/users", label: "Usuários", desc: "Gerencie quem acessa o sistema e suas permissões", icon: Users },
-  { href: "/dashboard/settings/billing", label: "Plano e assinatura", desc: "Veja seu plano atual, uso e faça upgrade", icon: CreditCard },
+  { href: "/dashboard/settings/account", label: "Minha conta", desc: "Altere sua senha de acesso", icon: KeyRound },
   { href: "/dashboard/settings/audit", label: "Auditoria", desc: "Histórico de ações realizadas no sistema", icon: ScrollText },
 ];
 

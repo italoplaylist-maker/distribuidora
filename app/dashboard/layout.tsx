@@ -21,7 +21,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         mainItems={filterByPermission(SIDEBAR_MAIN_NAV)}
         settingsItems={SIDEBAR_SETTINGS_NAV}
         companyName={tenant.company.nomeFantasia}
-        planName={tenant.company.subscription?.plan.name}
       />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {tenant.impersonatedBy && <ImpersonationBanner adminName={tenant.impersonatedBy.adminName} companyName={tenant.company.nomeFantasia} />}

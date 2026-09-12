@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
-import { ChevronsLeft, ChevronsRight, ChevronDown, Settings, LogOut, CreditCard } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, ChevronDown, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ICONS, type NavItem } from "@/components/layout/nav-config";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
@@ -32,12 +32,10 @@ export function Sidebar({
   mainItems,
   settingsItems,
   companyName,
-  planName,
 }: {
   mainItems: NavItem[];
   settingsItems: NavItem[];
   companyName: string;
-  planName?: string;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -66,7 +64,6 @@ export function Sidebar({
               <>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13.5px] font-semibold leading-tight">{companyName}</span>
-                  {planName && <span className="block truncate text-[11.5px] text-muted-foreground">Plano {planName}</span>}
                 </span>
                 <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
               </>
@@ -76,11 +73,6 @@ export function Sidebar({
         <DropdownMenuContent align="start" className="w-60">
           <DropdownMenuLabel>{companyName}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href="/dashboard/settings/billing">
-              <CreditCard className="size-4" /> Plano e assinatura
-            </Link>
-          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/settings/company">
               <Settings className="size-4" /> Configurações da empresa

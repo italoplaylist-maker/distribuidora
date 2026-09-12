@@ -43,67 +43,30 @@ function personName(seed: number) {
   return `${pick(FIRST_NAMES, seed)} ${pick(LAST_NAMES, seed + 3)}`;
 }
 
+/**
+ * Single standard plan — the product doesn't sell multiple tiers today,
+ * so there's nothing to configure or show a price for. Limits still exist
+ * as a scalability safety net (see lib/tenant/limits.ts), just not
+ * surfaced as a sales pitch.
+ */
 async function seedPlans() {
-  const [starter, professional, premium] = await Promise.all([
-    prisma.plan.create({
-      data: {
-        name: "Starter",
-        slug: "starter",
-        description: "Ideal para quem está começando",
-        priceMonthly: 79.9,
-        priceYearly: 799,
-        maxUsers: 2,
-        maxProducts: 500,
-        maxCustomers: 500,
-        maxSuppliers: 50,
-        maxStorageMb: 1024,
-        features: [],
-        sortOrder: 1,
-      },
-    }),
-    prisma.plan.create({
-      data: {
-        name: "Professional",
-        slug: "professional",
-        description: "Para distribuidoras em crescimento",
-        priceMonthly: 199.9,
-        priceYearly: 1999,
-        maxUsers: 10,
-        maxProducts: 5000,
-        maxCustomers: 10000,
-        maxSuppliers: 200,
-        maxStorageMb: 10240,
-        features: ["advanced_reports", "delivery_management", "barcode_scanner"],
-        sortOrder: 2,
-      },
-    }),
-    prisma.plan.create({
-      data: {
-        name: "Premium",
-        slug: "premium",
-        description: "Recursos ilimitados para operações de grande porte",
-        priceMonthly: 399.9,
-        priceYearly: 3999,
-        maxUsers: -1,
-        maxProducts: -1,
-        maxCustomers: -1,
-        maxSuppliers: -1,
-        maxStorageMb: 102400,
-        features: [
-          "advanced_reports",
-          "delivery_management",
-          "barcode_scanner",
-          "multiple_cash_registers",
-          "financial_reports",
-          "inventory",
-          "offline_mode",
-          "api_access",
-        ],
-        sortOrder: 3,
-      },
-    }),
-  ]);
-  return { starter, professional, premium };
+  const padrao = await prisma.plan.create({
+    data: {
+      name: "Padrão",
+      slug: "padrao",
+      description: "Plano padrão da plataforma",
+      priceMonthly: 0,
+      priceYearly: 0,
+      maxUsers: 20,
+      maxProducts: 10000,
+      maxCustomers: 10000,
+      maxSuppliers: 500,
+      maxStorageMb: 20480,
+      features: [],
+      sortOrder: 1,
+    },
+  });
+  return { padrao };
 }
 
 interface CompanySeedSpec {
@@ -456,7 +419,7 @@ async function main() {
   }
 
   console.log("Criando planos...");
-  const { starter, professional, premium } = await seedPlans();
+  const { padrao } = await seedPlans();
 
   console.log("Criando super admin...");
   await prisma.user.create({
@@ -477,7 +440,7 @@ async function main() {
       city: "São Paulo",
       state: "SP",
       status: "ACTIVE",
-      planId: professional.id,
+      planId: padrao.id,
       planSlug: "prof",
     },
     1,
@@ -491,7 +454,7 @@ async function main() {
       city: "Rio de Janeiro",
       state: "RJ",
       status: "TRIAL",
-      planId: starter.id,
+      planId: padrao.id,
       planSlug: "start",
     },
     2,
@@ -505,7 +468,7 @@ async function main() {
       city: "Curitiba",
       state: "PR",
       status: "ACTIVE",
-      planId: premium.id,
+      planId: padrao.id,
       planSlug: "premium",
     },
     3,

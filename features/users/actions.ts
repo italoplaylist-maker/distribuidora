@@ -2,13 +2,13 @@
 
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import { requirePermission } from "@/lib/permissions/guard";
+import { requirePermission, requireRead } from "@/lib/permissions/guard";
 import { PERMISSIONS } from "@/lib/permissions/permissions";
 import { assertWithinPlanLimit } from "@/lib/tenant/limits";
 import { NotFoundError } from "@/lib/tenant/tenant-context";
 import { recordAudit } from "@/lib/audit/audit";
 import { prisma } from "@/lib/database/prisma";
-import { createUserSchema } from "@/schemas/user";
+import { createUserSchema, changeOwnPasswordSchema } from "@/schemas/user";
 
 export interface ActionResult {
   success: boolean;
@@ -58,5 +58,27 @@ export async function toggleUserActiveAction(userId: string, active: boolean): P
   await recordAudit({ companyId: tenant.companyId, userId: tenant.userId, action: active ? "user.activate" : "user.deactivate", entity: "User", entityId: userId });
 
   revalidatePath("/dashboard/settings/users");
+  return { success: true };
+}
+
+export async function changeOwnPasswordAction(input: unknown): Promise<ActionResult> {
+  const tenant = await requireRead();
+  const parsed = changeOwnPasswordSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message };
+  const data = parsed.data;
+
+  const user = await prisma.user.findUnique({ where: { id: tenant.userId } });
+  if (!user) return { success: false, error: "Sessão inválida" };
+
+  const validPassword = await bcrypt.compare(data.currentPassword, user.passwordHash);
+  if (!validPassword) return { success: false, error: "Senha atual incorreta" };
+
+  await prisma.user.update({
+    where: { id: tenant.userId },
+    data: { passwordHash: await bcrypt.hash(data.newPassword, 10) },
+  });
+
+  await recordAudit({ companyId: tenant.companyId, userId: tenant.userId, action: "user.password_update", entity: "User", entityId: tenant.userId });
+
   return { success: true };
 }

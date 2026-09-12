@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Building2, Package, CreditCard, ScrollText, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, Building2, CreditCard, ScrollText, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/brand-logo";
 
 export const ADMIN_NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/companies", label: "Empresas", icon: Building2 },
-  { href: "/admin/plans", label: "Planos", icon: Package },
   { href: "/admin/subscriptions", label: "Assinaturas", icon: CreditCard },
   { href: "/admin/audit", label: "Auditoria", icon: ScrollText },
 ];
