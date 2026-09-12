@@ -36,12 +36,13 @@ export async function registerCompanyAction(input: unknown): Promise<ActionResul
   const [existingCnpj, existingEmail, plan] = await Promise.all([
     prisma.company.findUnique({ where: { cnpj: data.cnpj } }),
     prisma.user.findUnique({ where: { email: data.adminEmail.toLowerCase().trim() } }),
-    prisma.plan.findUnique({ where: { id: data.planId } }),
+    // Single standard plan for every company — there's no plan picker anymore.
+    prisma.plan.findFirst({ where: { active: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
   if (existingCnpj) return { success: false, error: "Já existe uma empresa cadastrada com este CNPJ" };
   if (existingEmail) return { success: false, error: "Já existe uma conta com este e-mail" };
-  if (!plan || !plan.active) return { success: false, error: "Plano inválido" };
+  if (!plan) return { success: false, error: "Não foi possível concluir o cadastro. Tente novamente em instantes." };
 
   const now = new Date();
   const trialEndsAt = new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);

@@ -19,3 +19,15 @@ export const companySchema = z.object({
   state: z.string().optional(),
 });
 export type CompanyProfileInput = z.infer<typeof companySchema>;
+
+export const changeOwnPasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Informe sua senha atual"),
+    newPassword: z.string().min(6, "A nova senha deve ter ao menos 6 caracteres"),
+    confirmPassword: z.string().min(1, "Confirme a nova senha"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
+export type ChangeOwnPasswordInput = z.infer<typeof changeOwnPasswordSchema>;

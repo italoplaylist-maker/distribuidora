@@ -6,22 +6,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn, formatCurrency } from "@/lib/utils";
 import { registerCompanyAction } from "@/features/auth/actions";
-import { Loader2, Check } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-interface PlanOption {
-  id: string;
-  name: string;
-  priceMonthly: string;
-  maxUsers: number;
-  maxProducts: number;
-}
-
-export function SignupForm({ plans }: { plans: PlanOption[] }) {
+export function SignupForm() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [planId, setPlanId] = useState(plans[0]?.id ?? "");
   const [form, setForm] = useState({
     razaoSocial: "",
     nomeFantasia: "",
@@ -40,7 +30,7 @@ export function SignupForm({ plans }: { plans: PlanOption[] }) {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const result = await registerCompanyAction({ ...form, planId });
+      const result = await registerCompanyAction(form);
       if (!result.success) {
         toast.error(result.error);
         return;
@@ -53,30 +43,6 @@ export function SignupForm({ plans }: { plans: PlanOption[] }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <div>
-        <p className="mb-2 text-sm font-medium">Escolha um plano</p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {plans.map((plan) => (
-            <button
-              type="button"
-              key={plan.id}
-              onClick={() => setPlanId(plan.id)}
-              className={cn(
-                "relative rounded-xl border p-4 text-left transition-colors",
-                planId === plan.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted",
-              )}
-            >
-              {planId === plan.id && <Check className="absolute right-3 top-3 size-4 text-primary" />}
-              <p className="font-semibold">{plan.name}</p>
-              <p className="text-lg font-bold">{formatCurrency(plan.priceMonthly)}<span className="text-xs font-normal text-muted-foreground">/mês</span></p>
-              <p className="text-xs text-muted-foreground">
-                Até {plan.maxUsers < 0 ? "usuários ilimitados" : `${plan.maxUsers} usuários`}
-              </p>
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label>Razão social</Label>

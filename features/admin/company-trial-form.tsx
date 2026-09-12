@@ -8,50 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { updateCompanyPlanAction, updateCompanyTrialAction } from "@/features/admin/actions";
-
-interface PlanOption {
-  id: string;
-  name: string;
-}
-
-export function CompanyPlanForm({ companyId, planId, plans }: { companyId: string; planId?: string; plans: PlanOption[] }) {
-  const router = useRouter();
-  const [value, setValue] = useState(planId ?? "");
-  const [isPending, startTransition] = useTransition();
-
-  function onSave() {
-    startTransition(async () => {
-      const result = await updateCompanyPlanAction(companyId, value);
-      if (!result.success) {
-        toast.error(result.error ?? "Não foi possível alterar o plano");
-        return;
-      }
-      toast.success("Plano alterado");
-      router.refresh();
-    });
-  }
-
-  return (
-    <div className="flex gap-2">
-      <Select value={value} onValueChange={setValue}>
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Plano" />
-        </SelectTrigger>
-        <SelectContent>
-          {plans.map((p) => (
-            <SelectItem key={p.id} value={p.id}>
-              {p.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button size="sm" onClick={onSave} disabled={isPending || !value || value === planId}>
-        {isPending && <Loader2 className="animate-spin" />} Salvar
-      </Button>
-    </div>
-  );
-}
+import { updateCompanyTrialAction } from "@/features/admin/actions";
 
 export function CompanyTrialForm({ companyId, trialEndsAt, trialBehavior }: { companyId: string; trialEndsAt: string; trialBehavior: string }) {
   const router = useRouter();

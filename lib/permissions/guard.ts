@@ -15,7 +15,7 @@ export async function requirePermission(permission: Permission) {
     throw new ForbiddenError(
       tenant.company.status === "SUSPENDED"
         ? "Empresa suspensa. Regularize sua assinatura para continuar."
-        : "Seu período de teste terminou. Assine um plano para continuar.",
+        : "Seu período de teste terminou. Fale com o suporte para continuar.",
     );
   }
 
