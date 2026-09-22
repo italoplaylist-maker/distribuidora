@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/database/prisma";
+import { brazilDateKey, startOfDayBrazil, addDaysBrazil } from "@/lib/timezone";
 
 const SETTLED_ACCOUNTS_LIMIT = 50;
 
@@ -148,9 +149,7 @@ export type CashFlowPeriod = keyof typeof CASH_FLOW_PERIOD_DAYS;
  */
 export async function getCashFlow(companyId: string, period: CashFlowPeriod = "30d") {
   const days = CASH_FLOW_PERIOD_DAYS[period];
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - (days - 1));
+  const start = addDaysBrazil(startOfDayBrazil(), -(days - 1));
 
   const movements = await prisma.cashMovement.findMany({
     where: { cashRegister: { companyId }, type: { not: "ABERTURA" }, createdAt: { gte: start } },
@@ -163,12 +162,12 @@ export async function getCashFlow(companyId: string, period: CashFlowPeriod = "3
   const step = Math.ceil(days / bucketDays);
   for (let i = days - 1; i >= 0; i -= step) {
     const d = new Date(start.getTime() + (days - 1 - i) * 86400000);
-    buckets.set(d.toISOString().slice(0, 10), { entradas: 0, saidas: 0 });
+    buckets.set(brazilDateKey(d), { entradas: 0, saidas: 0 });
   }
   const bucketKeys = [...buckets.keys()].sort();
 
   function keyFor(date: Date) {
-    const iso = date.toISOString().slice(0, 10);
+    const iso = brazilDateKey(date);
     let match = bucketKeys[0];
     for (const k of bucketKeys) {
       if (k <= iso) match = k;
@@ -197,11 +196,14 @@ export async function getCashFlow(companyId: string, period: CashFlowPeriod = "3
   }
 
   return {
-    points: bucketKeys.map((key) => ({
-      label: new Date(key).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-      entradas: buckets.get(key)!.entradas,
-      saidas: buckets.get(key)!.saidas,
-    })),
+    points: bucketKeys.map((key) => {
+      const [, month, day] = key.split("-");
+      return {
+        label: `${day}/${month}`,
+        entradas: buckets.get(key)!.entradas,
+        saidas: buckets.get(key)!.saidas,
+      };
+    }),
     totalEntradas,
     totalSaidas,
     saldoPeriodo: totalEntradas - totalSaidas,

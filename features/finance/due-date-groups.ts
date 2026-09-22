@@ -1,3 +1,5 @@
+import { startOfDayBrazil } from "@/lib/timezone";
+
 export type DueDateGroupKey = "overdue" | "today" | "next7" | "next30" | "later";
 
 export interface DueDateGroup<T> {
@@ -16,8 +18,7 @@ export const DUE_DATE_GROUP_LABELS: Record<DueDateGroupKey, string> = {
 
 /** Buckets items by due date into fixed windows, skipping empty buckets. */
 export function groupByDueDate<T>(items: T[], getDueDate: (item: T) => Date | string): DueDateGroup<T>[] {
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfToday = startOfDayBrazil();
   const endOfToday = new Date(startOfToday.getTime() + 86400000);
   const in7 = new Date(startOfToday.getTime() + 7 * 86400000);
   const in30 = new Date(startOfToday.getTime() + 30 * 86400000);
@@ -47,8 +48,7 @@ export interface DueDateSummary {
 
 /** Sums a numeric amount per item into the same due-date windows as groupByDueDate. */
 export function summarizeByDueDate<T>(items: T[], getDueDate: (item: T) => Date | string, getAmount: (item: T) => number): DueDateSummary {
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfToday = startOfDayBrazil();
   const in7 = new Date(startOfToday.getTime() + 7 * 86400000);
   const in30 = new Date(startOfToday.getTime() + 30 * 86400000);
 

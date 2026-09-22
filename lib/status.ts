@@ -1,3 +1,5 @@
+import { startOfDayBrazil } from "@/lib/timezone";
+
 export type BadgeTone = "default" | "success" | "warning" | "destructive" | "info" | "neutral";
 
 export interface StatusInfo {
@@ -18,7 +20,9 @@ export function purchaseStatus(status: string): StatusInfo {
 }
 
 export function accountStatus(status: string, dueDate: Date | string): StatusInfo {
-  const overdue = (status === "OPEN" || status === "PARTIALLY_PAID") && new Date(dueDate) < new Date();
+  // Compared against the start of today in Brazil, not the raw current instant — otherwise
+  // something due "today" would flip to "Vencida" hours early/late depending on server timezone.
+  const overdue = (status === "OPEN" || status === "PARTIALLY_PAID") && new Date(dueDate) < startOfDayBrazil();
   if (overdue) return { label: "Vencida", tone: "destructive" };
   switch (status) {
     case "PAID":

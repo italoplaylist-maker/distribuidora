@@ -1,37 +1,30 @@
 import "server-only";
 import { prisma } from "@/lib/database/prisma";
+import { brazilDateKey, brazilHour, startOfDayBrazil, addDaysBrazil } from "@/lib/timezone";
 import type { TrendPoint } from "@/components/trend-chart";
 import type { RankingItem } from "@/components/ranking-list";
 
-function startOfDay(d = new Date()) {
-  const date = new Date(d);
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
 function bucketByDay(sales: { createdAt: Date; totalAmount: unknown }[], days: number): TrendPoint[] {
   const buckets = new Map<string, number>();
-  const today = startOfDay();
+  const today = startOfDayBrazil();
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    buckets.set(d.toISOString().slice(0, 10), 0);
+    buckets.set(brazilDateKey(addDaysBrazil(today, -i)), 0);
   }
   for (const sale of sales) {
-    const key = sale.createdAt.toISOString().slice(0, 10);
+    const key = brazilDateKey(sale.createdAt);
     if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + Number(sale.totalAmount));
   }
-  return [...buckets.entries()].map(([key, value]) => ({
-    label: new Date(key).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
-    value,
-  }));
+  return [...buckets.entries()].map(([key, value]) => {
+    const [, month, day] = key.split("-");
+    return { label: `${day}/${month}`, value };
+  });
 }
 
 function bucketByHour(sales: { createdAt: Date; totalAmount: unknown }[]): TrendPoint[] {
   const buckets = new Map<number, number>();
   for (let h = 0; h < 24; h += 2) buckets.set(h, 0);
   for (const sale of sales) {
-    const hour = sale.createdAt.getHours();
+    const hour = brazilHour(sale.createdAt);
     const bucket = hour - (hour % 2);
     buckets.set(bucket, (buckets.get(bucket) ?? 0) + Number(sale.totalAmount));
   }
@@ -39,11 +32,9 @@ function bucketByHour(sales: { createdAt: Date; totalAmount: unknown }[]): Trend
 }
 
 export async function getDashboardData(companyId: string) {
-  const today = startOfDay();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const monthAgo = new Date(today);
-  monthAgo.setDate(monthAgo.getDate() - 30);
+  const today = startOfDayBrazil();
+  const yesterday = addDaysBrazil(today, -1);
+  const monthAgo = addDaysBrazil(today, -30);
 
   const [
     salesToday,
