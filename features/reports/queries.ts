@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/database/prisma";
+import { brazilYear, startOfMonthBrazil, startOfYearBrazil, startOfDayBrazil, addMonthsBrazil, BRAZIL_TIMEZONE } from "@/lib/timezone";
 
 export async function getSalesReport(companyId: string) {
   const [byPaymentMethod, topProducts, totalAgg] = await Promise.all([
@@ -134,7 +135,7 @@ export async function getFinanceReport(companyId: string) {
   ]);
 
   const overdueReceivables = await prisma.accountReceivable.count({
-    where: { companyId, status: { in: ["OPEN", "PARTIALLY_PAID"] }, dueDate: { lt: new Date() } },
+    where: { companyId, status: { in: ["OPEN", "PARTIALLY_PAID"] }, dueDate: { lt: startOfDayBrazil() } },
   });
 
   return {
@@ -157,8 +158,14 @@ function emptyProfitabilityPeriod(): ProfitabilityPeriod {
   return { faturamento: 0, custo: 0, lucroBruto: 0, margem: null, vendas: 0 };
 }
 
+/**
+ * `r.month` comes back from the SQL below already converted to Brazil's
+ * calendar (see the `AT TIME ZONE` conversion in the queries) — Postgres
+ * hands it back as a naive value that the driver tags as UTC, so we read
+ * it with UTC getters here rather than converting it again.
+ */
 function monthKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 /**
@@ -166,22 +173,27 @@ function monthKey(d: Date) {
  * linha em JS) para escalar independente do volume histórico de vendas.
  * Custo usa o averageCost *atual* do produto — mesma simplificação já usada
  * no dashboard, já que o sistema não guarda custo histórico por lote.
+ *
+ * `createdAt` é armazenado como horário UTC "naive" (sem timezone) — por
+ * isso o `date_trunc` abaixo converte explicitamente para o calendário de
+ * Brasília antes de truncar por mês; sem isso, vendas feitas à noite no
+ * Brasil (já de madrugada em UTC) cairiam no mês seguinte por engano.
  */
 export async function getProfitabilityAnalysis(companyId: string) {
   const now = new Date();
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const previousYearStart = new Date(now.getFullYear() - 1, 0, 1);
+  const currentMonthStart = startOfMonthBrazil(now);
+  const previousYearStart = startOfYearBrazil(brazilYear(now) - 1);
 
   const [revenueRows, costRows] = await Promise.all([
     prisma.$queryRawUnsafe<{ month: Date; faturamento: number; count: bigint }[]>(
-      `SELECT date_trunc('month', "createdAt")::date as month, sum("totalAmount")::float as faturamento, count(*)::bigint as count
+      `SELECT date_trunc('month', "createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date as month, sum("totalAmount")::float as faturamento, count(*)::bigint as count
        FROM sales WHERE "companyId" = $1 AND status = 'COMPLETED' AND "createdAt" >= $2
        GROUP BY 1 ORDER BY 1`,
       companyId,
       previousYearStart,
     ),
     prisma.$queryRawUnsafe<{ month: Date; custo: number }[]>(
-      `SELECT date_trunc('month', s."createdAt")::date as month, sum(si.quantity * p."averageCost")::float as custo
+      `SELECT date_trunc('month', s."createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')::date as month, sum(si.quantity * p."averageCost")::float as custo
        FROM sale_items si
        JOIN sales s ON s.id = si."saleId"
        JOIN products p ON p.id = si."productId"
@@ -225,23 +237,24 @@ export async function getProfitabilityAnalysis(companyId: string) {
     return period;
   }
 
-  const previousMonthDate = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() - 1, 1);
+  const previousMonthDate = addMonthsBrazil(currentMonthStart, -1);
   const currentMonth = monthMap.get(monthKey(currentMonthStart)) ?? emptyProfitabilityPeriod();
   const previousMonth = monthMap.get(monthKey(previousMonthDate)) ?? emptyProfitabilityPeriod();
 
   // Year-over-year compares the same number of elapsed months, not full calendar years.
-  const monthsElapsed = now.getMonth() + 1;
-  const currentYear = sumRange(monthKey(new Date(now.getFullYear(), 0, 1)), monthKey(new Date(now.getFullYear(), monthsElapsed, 1)));
-  const previousYearToDate = sumRange(monthKey(new Date(now.getFullYear() - 1, 0, 1)), monthKey(new Date(now.getFullYear() - 1, monthsElapsed, 1)));
+  const monthsElapsed = currentMonthStart.getUTCMonth() + 1;
+  const currentYearStart = startOfYearBrazil(brazilYear(now));
+  const currentYear = sumRange(monthKey(currentYearStart), monthKey(addMonthsBrazil(currentYearStart, monthsElapsed)));
+  const previousYearToDate = sumRange(monthKey(previousYearStart), monthKey(addMonthsBrazil(previousYearStart, monthsElapsed)));
 
   function variation(curr: number, prev: number): number | null {
     return prev > 0 ? ((curr - prev) / prev) * 100 : null;
   }
 
   const monthlyEvolution = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() - (5 - i), 1);
+    const d = addMonthsBrazil(currentMonthStart, -(5 - i));
     const p = monthMap.get(monthKey(d)) ?? emptyProfitabilityPeriod();
-    return { label: d.toLocaleDateString("pt-BR", { month: "short" }), faturamento: p.faturamento, custo: p.custo, lucroBruto: p.lucroBruto };
+    return { label: d.toLocaleDateString("pt-BR", { month: "short", timeZone: BRAZIL_TIMEZONE }), faturamento: p.faturamento, custo: p.custo, lucroBruto: p.lucroBruto };
   });
 
   return {

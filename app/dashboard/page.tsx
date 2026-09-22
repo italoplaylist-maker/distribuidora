@@ -11,6 +11,7 @@ import { AlertsCard } from "@/components/alerts-card";
 import { InsightsCard } from "@/components/insights-card";
 import { buildAlerts, buildInsights } from "@/features/dashboard/insights";
 import { formatCurrency } from "@/lib/utils";
+import { BRAZIL_TIMEZONE } from "@/lib/timezone";
 import {
   Receipt,
   TrendingUp,
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
   const tenant = await getCurrentTenant();
   const data = await getDashboardData(tenant.companyId);
   const firstName = tenant.userName.split(" ")[0];
-  const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+  const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", timeZone: BRAZIL_TIMEZONE });
   const alerts = buildAlerts(data);
   const insights = buildInsights(data);
 
